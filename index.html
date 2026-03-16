@@ -1,0 +1,3116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Ledger of Legacies</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400;1,600&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+/* ── RESET ── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ── SCENE ── */
+html, body {
+  height: 100%;
+  background: #0d0804;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 20% 40%, #1e0e04 0%, transparent 60%),
+    radial-gradient(ellipse 60% 70% at 80% 60%, #0a0503 0%, transparent 60%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Crimson Text', Georgia, serif;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── JOURNAL WRAPPER ── */
+.journal-wrap {
+  display: flex;
+  align-items: stretch;
+  width: min(96vw, 820px);
+  height: min(88vh, 780px);
+  filter: drop-shadow(0 40px 70px rgba(0,0,0,0.92)) drop-shadow(0 8px 20px rgba(0,0,0,0.6));
+  perspective: 2000px;
+}
+
+/* ── SPINE ── */
+.spine {
+  width: 56px;
+  flex-shrink: 0;
+  background: linear-gradient(to right,
+    #060301 0%, #160904 8%, #2e1507 20%,
+    #4a2410 38%, #5c2e12 50%,
+    #4a2410 62%, #2e1507 80%,
+    #160904 92%, #060301 100%);
+  border-radius: 6px 0 0 6px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset -4px 0 12px rgba(0,0,0,0.5), inset 4px 0 8px rgba(0,0,0,0.3);
+  z-index: 10;
+}
+/* Spine bands */
+.spine::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom,
+      transparent 0px, transparent 18px,
+      rgba(255,180,80,0.07) 18px, rgba(255,180,80,0.07) 20px,
+      transparent 20px, transparent 68px,
+      rgba(255,180,80,0.07) 68px, rgba(255,180,80,0.07) 70px,
+      transparent 70px, transparent calc(100% - 70px),
+      rgba(255,180,80,0.07) calc(100% - 70px), rgba(255,180,80,0.07) calc(100% - 68px),
+      transparent calc(100% - 68px), transparent calc(100% - 20px),
+      rgba(255,180,80,0.07) calc(100% - 20px), rgba(255,180,80,0.07) calc(100% - 18px),
+      transparent calc(100% - 18px));
+  pointer-events: none;
+}
+.spine-title {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) rotate(90deg);
+  white-space: nowrap;
+  font-family: 'Cinzel', serif;
+  font-size: 7px;
+  letter-spacing: 0.32em;
+  color: rgba(180,130,60,0.28);
+  text-transform: uppercase;
+}
+/* Spine rings */
+.spine-rings {
+  position: absolute;
+  left: 50%;
+  top: 0; bottom: 0;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  gap: 0;
+  pointer-events: none;
+}
+.spine-ring {
+  width: 18px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(200,150,60,0.2);
+  background: linear-gradient(135deg, rgba(255,180,60,0.08) 0%, transparent 60%);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.4);
+  flex-shrink: 0;
+}
+
+/* ── PAGE AREA ── */
+.page-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  border-radius: 0 6px 6px 0;
+}
+
+/* ── PAGE LAYERS ── */
+.page {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(108deg, #e4d5a0 0%, #f2e6c6 45%, #eeddb2 100%);
+  overflow: hidden;
+}
+/* Ruled lines removed */
+.page::before { content: ''; position: absolute; pointer-events: none; }
+/* Right margin line removed */
+.page::after  { content: ''; position: absolute; pointer-events: none; }
+/* Page shadow on spine edge */
+.page-back  { z-index: 1; }
+.page-front { z-index: 2; box-shadow: inset 8px 0 20px rgba(0,0,0,0.12), inset -4px 0 10px rgba(0,0,0,0.06); }
+
+/* ── FLIP PAGE ── */
+.page-flip {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  transform-style: preserve-3d;
+  transform-origin: left center;
+  transform: rotateY(0deg);
+  pointer-events: none;
+}
+.page-flip.animating { pointer-events: none; }
+.flip-face, .flip-back-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+}
+.flip-face {
+  background: linear-gradient(108deg, #e4d5a0 0%, #f2e6c6 45%, #eeddb2 100%);
+  box-shadow: inset 8px 0 20px rgba(0,0,0,0.12), inset -4px 0 10px rgba(0,0,0,0.06);
+}
+.flip-face::before { content: ''; position: absolute; pointer-events: none; }
+.flip-face::after { content: ''; position: absolute; pointer-events: none; }
+.flip-back-face {
+  background: linear-gradient(252deg, #e0d09a 0%, #eee4c0 45%, #e8d9ac 100%);
+  transform: rotateY(180deg);
+  box-shadow: inset -8px 0 20px rgba(0,0,0,0.1);
+}
+
+/* ── PAGE CONTENT INNER ── */
+.pc {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 8px 8px 16px;
+  overflow: hidden;
+  z-index: 2;
+}
+
+/* ── TYPOGRAPHY ── */
+.pnum {
+  font-family: 'Special Elite', monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.22em;
+  color: rgba(85,55,18,0.72);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.section-label {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  color: rgba(120,80,22,0.78);
+  text-transform: uppercase;
+  border-bottom: 0.5px solid rgba(120,80,22,0.32);
+  padding-bottom: 5px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+.page-title {
+  font-family: 'Cinzel', serif;
+  font-size: 20px;
+  color: #2a1804;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  margin-bottom: 3px;
+}
+.page-sub {
+  font-family: 'Crimson Text', serif;
+  font-style: italic;
+  font-size: 12px;
+  color: rgba(75,48,12,0.75);
+  margin-bottom: 14px;
+}
+.orn {
+  text-align: center;
+  font-size: 12px;
+  color: rgba(130,88,28,0.3);
+  letter-spacing: 0.4em;
+  margin: 8px 0;
+}
+.dv {
+  border: none;
+  border-top: 0.5px solid rgba(110,75,22,0.26);
+  margin: 10px 0;
+  flex-shrink: 0;
+}
+
+/* ── WIREFRAME BLOCKS ── */
+.wb {
+  border: 1.5px dashed rgba(110,75,22,0.28);
+  border-radius: 3px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background: rgba(150,110,45,0.04);
+  position: relative;
+  flex-shrink: 0;
+}
+.wb.fill   { flex: 1; min-height: 40px; }
+.wb.tall   { min-height: 70px; }
+.wb.short  { min-height: 34px; }
+.wb.accent { border-color: rgba(100,62,14,0.42); background: rgba(130,88,28,0.07); }
+.wb.locked { border-color: rgba(80,48,14,0.45); background: rgba(0,0,0,0.03); opacity: 0.62; }
+.wb.ai     { border-color: rgba(78,48,130,0.32); background: rgba(78,48,130,0.04); }
+.wb.success{ border-color: rgba(38,88,42,0.32); background: rgba(38,88,42,0.04); }
+
+.wbl {
+  font-family: 'Cinzel', serif;
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  color: rgba(105,72,18,0.72);
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+.wbd {
+  font-family: 'Crimson Text', serif;
+  font-style: italic;
+  font-size: 12px;
+  color: rgba(72,48,14,0.82);
+  line-height: 1.4;
+}
+.wr { display: flex; gap: 7px; margin-bottom: 8px; flex-shrink: 0; }
+.wr .wb    { flex: 1; margin-bottom: 0; }
+
+/* ── FORM INPUTS ── */
+.fi {
+  border: none;
+  border-bottom: 1px solid rgba(110,75,22,0.36);
+  background: transparent;
+  font-family: 'Crimson Text', serif;
+  font-size: 12px;
+  color: rgba(72,48,14,0.75);
+  font-style: italic;
+  width: 100%;
+  padding: 4px 0;
+  margin-bottom: 10px;
+  outline: none;
+}
+.fi-label {
+  font-family: 'Cinzel', serif;
+  font-size: 7.5px;
+  letter-spacing: 0.18em;
+  color: rgba(105,72,18,0.72);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 2px;
+}
+
+/* ── BADGES & PILLS ── */
+.badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 2px;
+  font-family: 'Cinzel', serif;
+  font-size: 7px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid rgba(110,75,22,0.45);
+  color: rgba(88,58,14,0.85);
+  background: rgba(150,108,38,0.06);
+  margin-right: 4px;
+}
+.badge.dm  { border-color: rgba(130,28,28,0.38); color: rgba(130,28,28,0.72); background: rgba(130,28,28,0.05); }
+.badge.pl  { border-color: rgba(28,78,130,0.38); color: rgba(28,78,130,0.72); background: rgba(28,78,130,0.05); }
+.badge.ai  { border-color: rgba(78,48,130,0.38); color: rgba(78,48,130,0.68); background: rgba(78,48,130,0.05); }
+
+.lock-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 7px; border-radius: 2px;
+  font-family: 'Cinzel', serif; font-size: 7px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  border: 1px dashed rgba(110,75,22,0.52);
+}
+.lock-pill.locked { border-color: rgba(140,48,28,0.42); color: rgba(140,48,28,0.65); background: rgba(140,48,28,0.04); }
+.lock-pill.open   { border-color: rgba(38,88,42,0.42); color: rgba(38,88,42,0.68); background: rgba(38,88,42,0.04); }
+
+/* ── NPC ROW ── */
+.npc-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; flex-shrink: 0; }
+.npc-img {
+  width: 54px; height: 54px; border-radius: 3px;
+  border: 1.5px dashed rgba(110,75,22,0.32);
+  background: rgba(140,100,38,0.06);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.npc-img-sm {
+  width: 32px; height: 32px; border-radius: 2px;
+  border: 1px dashed rgba(110,75,22,0.28);
+  background: rgba(140,100,38,0.05);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 9px;
+}
+.npc-img-lbl {
+  font-family: 'Cinzel', serif; font-size: 6.5px;
+  letter-spacing: 0.1em; color: rgba(105,72,18,0.62);
+  text-transform: uppercase; text-align: center;
+}
+
+/* ── STAT CELLS ── */
+.sc { display: flex; gap: 7px; margin-bottom: 10px; flex-shrink: 0; }
+.sv {
+  flex: 1; border: 1.5px dashed rgba(110,75,22,0.28);
+  border-radius: 3px; padding: 8px 6px;
+  text-align: center; background: rgba(150,110,45,0.04);
+}
+.svv { font-family: 'Cinzel', serif; font-size: 18px; color: rgba(60,38,8,0.7); display: block; }
+.svl { font-family: 'Crimson Text', serif; font-size: 9px; color: rgba(92,62,16,0.72); font-style: italic; }
+
+/* ── ROLE CARDS ── */
+.role-card {
+  border: 1.5px dashed rgba(110,75,22,0.32);
+  border-radius: 4px;
+  padding: 16px;
+  margin-bottom: 10px;
+  background: rgba(150,110,45,0.04);
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+}
+.role-card:hover { background: rgba(130,85,24,0.1); border-color: rgba(110,75,22,0.5); }
+.role-icon { font-size: 26px; display: block; margin-bottom: 8px; opacity: 0.5; }
+.role-name { font-family: 'Cinzel', serif; font-size: 14px; color: #2a1804; letter-spacing: 0.05em; margin-bottom: 4px; }
+.role-desc { font-family: 'Crimson Text', serif; font-style: italic; font-size: 11px; color: rgba(75,48,14,0.78); line-height: 1.45; }
+
+/* ── AI BUBBLE ── */
+.ai-q {
+  border: 1px dashed rgba(78,48,130,0.32);
+  border-radius: 3px;
+  padding: 7px 10px;
+  margin-bottom: 7px;
+  background: rgba(78,48,130,0.04);
+  flex-shrink: 0;
+}
+.ai-ql { font-family: 'Cinzel', serif; font-size: 7.5px; letter-spacing: 0.16em; color: rgba(78,48,130,0.82); text-transform: uppercase; margin-bottom: 2px; }
+.ai-qd { font-family: 'Crimson Text', serif; font-style: italic; font-size: 11px; color: rgba(58,42,88,0.85); }
+
+/* ── STORE ITEM ── */
+.store-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 10px; margin-bottom: 5px;
+  border: 1px dashed rgba(110,75,22,0.26);
+  border-radius: 2px; background: rgba(150,110,45,0.03);
+  flex-shrink: 0;
+}
+.store-icon { font-size: 15px; opacity: 0.42; flex-shrink: 0; }
+.store-name { font-family: 'Crimson Text', serif; font-size: 12px; color: rgba(58,38,10,0.74); font-weight: 600; }
+.store-price { font-family: 'Cinzel', serif; font-size: 9.5px; color: rgba(138,92,18,0.62); }
+.store-desc { font-family: 'Crimson Text', serif; font-style: italic; font-size: 10px; color: rgba(72,50,14,0.72); }
+.gold-val { font-family: 'Cinzel', serif; font-size: 18px; color: rgba(158,112,18,0.68); letter-spacing: 0.04em; }
+.gold-lbl { font-family: 'Crimson Text', serif; font-style: italic; font-size: 9.5px; color: rgba(100,68,14,0.72); }
+
+/* ── CHECKLIST ── */
+.ci { display: flex; align-items: flex-start; gap: 7px; margin-bottom: 6px; font-family: 'Crimson Text', serif; font-size: 11px; color: rgba(65,42,12,0.82); font-style: italic; flex-shrink: 0; }
+.cb { width: 10px; height: 10px; border-radius: 1px; border: 1px solid rgba(110,72,16,0.32); margin-top: 1px; flex-shrink: 0; }
+.cb.x { background: rgba(110,72,16,0.18); }
+.cb.x::after { content: '✕'; font-size: 7px; color: rgba(110,72,16,0.58); line-height: 10px; display: block; text-align: center; font-style: normal; }
+
+/* ── SWIPE CARDS ── */
+.swipe-stack { display: flex; gap: 8px; margin-bottom: 8px; flex-shrink: 0; }
+.swipe-card {
+  flex: 1; border: 1.5px dashed rgba(110,75,22,0.34); border-radius: 4px;
+  padding: 10px 8px; text-align: center; background: rgba(150,110,45,0.05);
+}
+.swipe-card.dim { opacity: 0.5; transform: scale(0.97); }
+.swipe-img {
+  width: 60px; height: 72px; margin: 0 auto 7px;
+  border: 1px dashed rgba(110,75,22,0.28); border-radius: 3px;
+  background: rgba(140,100,38,0.07);
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ── NAV LIST ITEMS ── */
+.ni {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; margin-bottom: 4px; border-radius: 2px;
+  font-family: 'Crimson Text', serif; font-size: 12.5px;
+  color: rgba(68,42,12,0.85);
+  border: 1px dashed rgba(110,75,22,0.32);
+  flex-shrink: 0;
+}
+.ni.active { background: rgba(130,85,24,0.08); border-color: rgba(130,85,24,0.38); color: rgba(52,32,6,0.9); font-weight: 600; }
+.nd { width: 5px; height: 5px; border-radius: 50%; border: 1px solid rgba(110,72,16,0.35); flex-shrink: 0; }
+.ni.active .nd { background: rgba(130,85,24,0.62); }
+
+/* ── COVER PAGE ── */
+.cover-center {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; padding: 0 12px;
+}
+
+/* ── SCROLLABLE CONTENT ── */
+.scroll-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+}
+/* ── PLAYER CARDS ── */
+.pc-card      { width: 140px; height: 250px; flex-shrink: 0; }
+.pc-card-npc  { background: linear-gradient(148deg, #e8cc98, #c49858); }
+.pc-card-city { background: linear-gradient(148deg, #b89a58, #8a6428); }
+.pc-card-shop { background: linear-gradient(148deg, #4765a7, #759bd7); }
+
+.scroll-body::-webkit-scrollbar { width: 3px; }
+.scroll-body::-webkit-scrollbar-track { background: transparent; }
+.scroll-body::-webkit-scrollbar-thumb { background: rgba(110,75,22,0.2); border-radius: 2px; }
+
+.cd-col::-webkit-scrollbar { width: 2px; }
+.cd-col::-webkit-scrollbar-track { background: transparent; }
+.cd-col::-webkit-scrollbar-thumb { background: rgba(110,75,22,0.28); border-radius: 1px; }
+.cd-col { scrollbar-width: thin; scrollbar-color: rgba(110,75,22,0.28) transparent; }
+
+/* ── CARD SWAP ANIMATION ── */
+@keyframes stackPulse {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.04) translateX(4px); }
+  100% { transform: scale(1); }
+}
+
+/* ── PAGE FOLD ── */
+.fold {
+  position: absolute; bottom: 0; right: 0; width: 0; height: 0;
+  border-style: solid; border-width: 0 0 18px 18px;
+  border-color: transparent transparent rgba(165,135,72,0.14) transparent; z-index: 5;
+}
+
+/* ── NAV CONTROLS ── */
+.controls {
+  position: fixed;
+  bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  z-index: 100;
+}
+.ctrl-btn {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(75,45,10,0.72);
+  border: 1.5px solid rgba(165,118,42,0.3);
+  color: rgba(208,172,98,0.85);
+  font-size: 22px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s, transform 0.12s;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.ctrl-btn:hover  { background: rgba(105,62,14,0.88); transform: scale(1.06); }
+.ctrl-btn:active { transform: scale(0.94); }
+.ctrl-btn:disabled { opacity: 0.2; cursor: default; transform: none; }
+.page-ind {
+  font-family: 'Cinzel', serif; font-size: 9.5px;
+  letter-spacing: 0.2em; color: rgba(192,152,72,0.48);
+  min-width: 130px; text-align: center;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .journal-wrap { width: 100vw; height: 100dvh; border-radius: 0; }
+  .spine { width: 24px; border-radius: 0; }
+  .spine-title { display: none; }
+  .spine-ring { width: 12px; height: 10px; }
+  .pc { padding: 8px; }
+  .page-title { font-size: 17px; }
+  .controls { bottom: 14px; gap: 14px; }
+  .ctrl-btn { width: 36px; height: 36px; font-size: 19px; }
+}
+@media (min-width: 601px) and (max-width: 900px) {
+  .journal-wrap { width: 96vw; height: 90vh; }
+  .spine { width: 40px; }
+  .spine-ring { width: 14px; height: 11px; }
+}
+</style>
+</head>
+<body>
+
+<div class="journal-wrap">
+  <!-- Spine -->
+  <div class="spine">
+    <div class="spine-rings" id="spine-rings"></div>
+    <div class="spine-title">The Harper's Hand · People &amp; Places</div>
+  </div>
+
+  <!-- Page area -->
+  <div class="page-area" id="page-area">
+    <div class="page page-back"  id="page-back"><div class="pc" id="back-content"></div></div>
+    <div class="page page-front" id="page-front"><div class="pc" id="front-content"></div></div>
+    <div class="page-flip" id="page-flip">
+      <div class="flip-face">     <div class="pc" id="flip-face-content"></div></div>
+      <div class="flip-back-face"><div class="pc" id="flip-back-content" style="position:relative;"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Navigation -->
+<div class="controls">
+  <div class="page-ind" id="indicator"></div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════
+   CAMPAIGN DETAIL — DATA & STATE
+══════════════════════════════════════════ */
+var _cdData = { campaign: 'The Shadow of Eldenmoor', cities: [
+  { n:'Irongate',   d:'Major Port City · Trading Hub',       c:3, desc:'A city built on iron and salt, where every ship that docks carries both commerce and conspiracy.',             size:'City',    cond:'Stable',   geo:'Coastal delta, iron-rich lowlands',  arch:'Weathered stone, industrial docks',  climate:'Temperate, frequent sea mists',  religion:'Temple of Kord',      vibe:'Industrious, tense undertow',          langs:"Common, Thieves' Cant",
+    secrets:["The iron mines beneath Irongate are nearly exhausted — and the guilds have known for eleven years. The seam that built this city's wealth, the deep Valdur Lode discovered three generations ago, has been running thin since before Lord-Governor Harwick took office. What began as a quiet concern among the mine foremen became a carefully managed conspiracy as the numbers grew undeniable. The Guild of Hammers commissioned three independent geological surveys between the years of the Copper Accord and the present day. All three surveyors were paid handsomely, sworn to silence, and each report was quietly buried in the guild archive beneath the Foundry Hall — a room that officially holds only ledgers and supply manifests. The public face of Irongate still speaks of the mines as an enduring resource, a birthright of stone and iron that will outlast every living citizen. Ships leaving the harbour still carry iron bars stamped with the guild seal and priced as though the seam runs forever. But the quality has declined sharply. The bars shipped in the last three years are thinner-gauged, alloyed with cheaper metals sourced from upriver trading posts to pad the weight. Buyers in distant markets have begun to notice, and two merchant contracts have quietly lapsed without renewal. Inside the city, the guild controls the narrative through a combination of selective employment, dock authority influence, and the strategic silencing of anyone who asks too many questions. Dock Master Fenn is aware — his ledgers show the import of supplementary ore from Thornhaven at a rate that makes no sense if the local mines were truly producing as claimed. He has said nothing, because his own financial arrangement with the guild depends on the fiction holding. The true timeline, according to the buried surveys, is between eight and fourteen years before the Valdur Lode yields nothing of commercial value. At that point Irongate loses its primary export, its tax base collapses, and the population — already stratified and restless — will have no easy answer to where the next generation's work will come from. The guild's current plan involves pivoting to dock taxation and positioning the city as a trading hub rather than a production centre, but this plan has not been shared with the city council, the temple, or the common citizenry. Anyone who uncovers this secret holds leverage over every major power in Irongate simultaneously.", "The Merchants' Guild secretly funds a private militia outside city law."],
+    npcs:[
+      { n:'Captain Rael',       d:'Guard · Human · Irongate',      desc:'Keeps order on the docks with a firm hand and a selective memory for who pays his wage.',                      pronouns:'he/him',   race:'Human',   role:'Guard',     age:'44',  align:'Lawful Neutral',  posture:'Puffed Chest',     speed:'Steady Drumbeat', voice:'Chest · Throat',        secrets:["Owes 200 gp to the Merchants' Guild and has been avoiding them for months","Took bribes from a Thieves' Guild contact last winter"], shop:null },
+      { n:'Mira Ashveil',       d:'Blacksmith · Human · Irongate', desc:'A taciturn smith whose work speaks louder than words — and whose secrets run deeper than her forge.',          pronouns:'she/her',  race:'Human',   role:'Blacksmith',age:'38',  align:'Neutral Good',    posture:'Slouchy',          speed:'Steady Drumbeat', voice:'Chest · Throat',        secrets:['She secretly fences stolen goods from the lower docks.'], shop:[{name:'Iron Sword',price:'15 gp',desc:'Standard military blade, well-balanced'},{name:'Chain Links',price:'3 gp',desc:'Repair kit for chain mail'},{name:'Horseshoes',price:'1 gp',desc:'Set of four, ready to fit'}] },
+      { n:'Lord Vane',          d:'Nobleman · Elf · Eldenmoor',    desc:'Gracious on the surface, calculating beneath. Every favour he grants carries a hidden ledger entry.',          pronouns:'he/him',   race:'Elf',     role:'Nobleman',  age:'312', align:'Lawful Neutral',  posture:'Puffed Chest',     speed:'Drawn-Out',       voice:'Head / Sinus',          secrets:['Has been feeding intelligence to a rival city-state for decades.','Controls three city judges through blackmail.'], shop:null },
+    ]},
+  { n:'Eldenmoor',  d:'Elven Forest Village · Mysterious',   c:2, desc:'Ancient trees older than memory shelter a community that measures time in centuries, not seasons.',             size:'Village', cond:'Thriving', geo:'Ancient forest, highland mists',     arch:'Grown timber, living wood weaving',  climate:'Cool, leaf-filtered light',      religion:'Circle of the Moon', vibe:'Ancient, watchful, wary of outsiders', langs:'Elvish, Druidic',
+    secrets:['The elder council has been deadlocked for three decades over a hidden crime.'],
+    npcs:[
+      { n:'Sister Odalys',      d:'Cleric · Halfling · Thornhaven',  desc:"Heals the wounded without question and prays without ceasing — yet her god's name she never speaks aloud.", pronouns:'she/her',  race:'Halfling',role:'Cleric',    age:'52',  align:'Lawful Good',     posture:'Close Talker',     speed:'Fast',            voice:'Chest · Mouth / Oral',  secrets:[], shop:null },
+      { n:'The Pale Archivist', d:'Unknown · Unknown · ???',          desc:'Has catalogued every secret in three kingdoms. Sells none of them — yet.',                                  pronouns:'they/them',race:'Unknown', role:'Archivist', age:'???', align:'True Neutral',    posture:'Slouchy',          speed:'Erratic',         voice:'Nasal · Head / Sinus',  secrets:['Real name unknown even to their employer.','Holds a copy of a sealed royal decree that could destabilise the throne.'], shop:[{name:'Forbidden Text',price:'40 gp',desc:'Redacted historical record — dangerous to possess'},{name:'Blank Tome',price:'5 gp',desc:'High-quality vellum, 200 pages'}] },
+      { n:'Grizel the Fence',   d:'Criminal · Gnome · Irongate',     desc:"Buys anything, sells everything, remembers nothing — officially. Her ledger tells a different story.",      pronouns:'she/her',  race:'Gnome',   role:'Criminal',  age:'89',  align:'Chaotic Neutral', posture:'Likes to Lean In', speed:'Fast',            voice:'Throat · Mouth / Oral', secrets:['Knows three active smuggling routes into the city.'], shop:[{name:'Stolen Dagger',price:'8 gp',desc:'No questions asked'},{name:'Forgery Kit',price:'25 gp',desc:'Complete set, barely used'},{name:'Lockpick Set',price:'12 gp',desc:'Professional quality'}] },
+    ]},
+  { n:'Thornhaven', d:'Rural Farming Settlement · Peaceful', c:1, desc:"Quiet fields and quieter folk — though the harvest festival hides rites the outside world has long forgotten.", size:'Village', cond:'Stable',   geo:'Rolling farmland, river valley',     arch:'Timber frame, thatched roofs',       climate:'Temperate, mild seasons',        religion:'Shrine of Chauntea',  vibe:'Quiet, communal, closed to outsiders', langs:'Common',
+    secrets:[],
+    npcs:[
+      { n:'Dock Master Fenn',   d:'Official · Human · Irongate',     desc:'Controls what enters and leaves Irongate. A reasonable man, at a reasonable price.',                        pronouns:'he/him',   race:'Human',   role:'Official',  age:'55',  align:'Lawful Neutral',  posture:'Close Talker',     speed:'Steady Drumbeat', voice:'Chest · Oral',          secrets:['Controls an import fraud ring worth 500 gp per month.'], shop:null },
+    ]},
+]};
+var _cdActiveCityIdx  = 0;
+var _cdActiveNpcRef   = { cityIdx:0, npcIdx:0 };
+var _cdRevealedSecrets  = {};
+var _npcDetailBackPage  = 15;   // page index to return to from NPC Detail
+var _ccdCityLocked      = {};   // cityIdx -> bool (true = locked/hidden from players)
+var _ccdSecretLocked    = {};   // 'ci:si' -> bool
+var _ccdSecretExpanded  = {};   // 'ci:si' -> bool
+var _secretModalType = '';   // 'city' or 'npc'
+var _secretModalIdx  = -1;
+
+/* ══════════════════════════════════════════
+   PAGE DEFINITIONS
+══════════════════════════════════════════ */
+const pages = [
+
+/* 0 · COVER ─────────────────────────────── */
+{ label: 'Cover',
+  html: `
+  <div class="pnum">the harper's hand</div>
+  <div class="cover-center">
+    <div style="font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.42em;color:rgba(118,78,18,0.72);text-transform:uppercase;margin-bottom:16px;">— an arcane compendium —</div>
+    <div style="border-top:1px solid rgba(88,56,16,0.38);width:80%;margin-bottom:16px;"></div>
+    <div style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.22em;color:rgba(78,50,12,0.78);text-transform:uppercase;margin-bottom:10px;">The Harper's</div>
+    <div style="font-family:'Cinzel',serif;font-size:32px;color:#251502;line-height:1.1;letter-spacing:0.06em;margin-bottom:6px;">Hand</div>
+    <div style="font-family:'Crimson Text',serif;font-style:italic;font-size:14px;color:rgba(78,50,12,0.78);margin-bottom:4px;">of People &amp; Places</div>
+    <div style="border-top:0.5px solid rgba(88,56,16,0.32);width:60%;margin:14px auto;"></div>
+    <div style="font-family:'Crimson Text',serif;font-style:italic;font-size:12px;color:rgba(72,48,12,0.82);max-width:240px;line-height:1.6;margin-bottom:24px;">A living record of the souls and cities that shape your realms — crafted, conjured, or catalogued for your campaign</div>
+    <div class="orn">· ✦ ·</div>
+    <div style="margin-top:18px;">
+      <div class="wb short accent" style="padding:10px 32px;text-align:center;cursor:pointer;border-width:1.5px;" onclick="goTo(1)">
+        <div style="font-family:'Cinzel',serif;font-size:13px;color:rgba(52,32,6,0.88);letter-spacing:0.18em;text-transform:uppercase;">Enter the Ledger</div>
+      </div>
+    </div>
+    <div style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.2em;color:rgba(118,78,18,0.58);text-transform:uppercase;margin-top:20px;">Version 0.2 · Wireframe Draft</div>
+  </div>
+  <div class="fold"></div>`
+},
+
+/* 1 · ROLE SELECT ──────────────────────── */
+{ label: 'I · Role Selection',
+  html: `
+  <div class="pnum">i · choose your role</div>
+  <div class="section-label" style="margin-bottom:3px;">Enter the Ledger</div>
+  <div class="page-sub" style="margin-bottom:10px;">Sign in as a Dungeon Master, or join a campaign as a Player.</div>
+
+  <!-- DM CREDENTIAL LOGIN -->
+  <div class="wb" style="padding:10px 12px;margin-bottom:6px;">
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;">
+      <span style="font-size:17px;line-height:1;">⚔️</span>
+      <div class="role-name" style="font-size:11px;flex:1;margin-bottom:0;">Dungeon Master</div>
+      <span class="badge dm">DM Access</span>
+    </div>
+    <label class="fi-label">Arcane Seal (Email)</label>
+    <input class="fi" placeholder="master@compendium.com" style="width:33%;">
+    <label class="fi-label">Password</label>
+    <input class="fi" type="password" placeholder="· · · · · · · ·" style="width:33%;margin-bottom:10px;letter-spacing:0.1em;">
+    <div onclick="goTo(2)" style="border:1.5px dashed rgba(100,62,14,0.45);background:rgba(130,88,28,0.08);border-radius:3px;padding:7px;text-align:center;cursor:pointer;">
+      <span style="font-family:'Cinzel',serif;font-size:10.5px;color:rgba(52,32,6,0.88);letter-spacing:0.16em;text-transform:uppercase;">Knock</span>
+    </div>
+    <div style="font-family:'Crimson Text',serif;font-style:italic;font-size:10px;color:rgba(105,72,18,0.65);text-align:center;margin-top:6px;cursor:pointer;">Forgot your arcane seal?</div>
+  </div>
+
+  <!-- OR DIVIDER -->
+  <div style="display:flex;align-items:center;gap:8px;margin:4px 0 6px;">
+    <div style="flex:1;border-top:0.5px solid rgba(110,75,22,0.24);"></div>
+    <span style="font-family:'Crimson Text',serif;font-style:italic;font-size:9.5px;color:rgba(105,72,18,0.65);">or enter as a player</span>
+    <div style="flex:1;border-top:0.5px solid rgba(110,75,22,0.24);"></div>
+  </div>
+
+  <!-- PLAYER INVITE CODE -->
+  <div class="wb" style="padding:10px 12px;margin-bottom:0;">
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;">
+      <span style="font-size:17px;line-height:1;">🛡️</span>
+      <div class="role-name" style="font-size:11px;flex:1;margin-bottom:0;">Player</div>
+      <span class="badge pl">Player Access</span>
+    </div>
+    <label class="fi-label">Campaign Invite Code</label>
+    <input class="fi" placeholder="SHADOW · 42" style="width:33%;text-align:center;font-size:15px;letter-spacing:0.26em;font-style:normal;margin-bottom:10px;">
+    <div onclick="goTo(0)" style="border:1.5px dashed rgba(28,78,130,0.40);background:rgba(28,78,130,0.05);border-radius:3px;padding:7px;text-align:center;cursor:pointer;">
+      <span style="font-family:'Cinzel',serif;font-size:10.5px;color:rgba(24,52,100,0.82);letter-spacing:0.16em;text-transform:uppercase;">Join Campaign</span>
+    </div>
+  </div>
+
+  <div class="fold"></div>`
+},
+
+/* 2 · DM DASHBOARD ─────────────────────── */
+{ label: 'II · DM Dashboard',
+  html: `
+  <div class="pnum">ii · dungeon master dashboard</div>
+  <div class="section-label">Overview</div>
+  <div class="page-title">Welcome Back, Storyteller</div>
+  <div class="sc">
+    <div class="sv" style="cursor:pointer;" onclick="goTo(7)"><span class="svv">2</span><span class="svl">Campaigns</span></div>
+    <div class="sv" style="cursor:pointer;" onclick="goTo(5)"><span class="svv">3</span><span class="svl">Cities</span></div>
+    <div class="sv" style="cursor:pointer;" onclick="goTo(12)"><span class="svv">7</span><span class="svl">Locations</span></div>
+    <div class="sv" style="cursor:pointer;" onclick="goTo(3)"><span class="svv">42</span><span class="svl">NPCs</span></div>
+  </div>
+  <div onclick="goTo(15,1)" class="wb accent" style="cursor:pointer;">
+    <div class="wbl">Active Campaign</div>
+    <div class="wbd">The Shadow of Eldenmoor · 4 players · 3 cities</div>
+  </div>
+  <div class="dv"></div>
+  <div class="section-label">Quick Actions</div>
+  <div class="wr">
+    <div onclick="goTo(8)" class="wb short accent" style="text-align:center;cursor:pointer;"><div class="wbd" style="color:rgba(52,32,6,0.72);">+ New Campaign</div></div>
+    <div onclick="goTo(6)" class="wb short" style="text-align:center;cursor:pointer;"><div class="wbd">+ New City</div></div>
+    <div onclick="goTo(13)" class="wb short" style="text-align:center;cursor:pointer;"><div class="wbd">+ New Location</div></div>
+    <div onclick="goTo(4)" class="wb short" style="text-align:center;cursor:pointer;"><div class="wbd">+ New NPC</div></div>
+  </div>
+  <div class="fold"></div>`
+},
+
+/* 3 · NPC LIBRARY ──────────────────────── */
+{ label: 'III · NPC Library',
+  html: `
+  <div class="pnum">iii · npc library</div>
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-shrink:0;">
+    <div onclick="goTo(2)" style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.12em;color:rgba(105,72,18,0.72);text-transform:uppercase;border:1px dashed rgba(110,75,22,0.32);padding:2px 8px;border-radius:2px;cursor:pointer;">← Dashboard</div>
+    <div style="flex:1;font-family:'Cinzel',serif;font-size:13px;color:#2a1804;text-align:center;letter-spacing:0.04em;">NPC Library</div>
+    <div style="width:70px;"></div>
+  </div>
+  <div class="section-label">All NPCs — Library</div>
+  <div style="display:flex;align-items:stretch;gap:8px;margin-bottom:8px;flex-shrink:0;">
+    <div class="wb short" style="width:66.6%;margin-bottom:0;">
+      <div class="wbl">Search</div>
+      <div class="wbd">Name · Class · Race · City · Tag…</div>
+    </div>
+    <div onclick="goTo(4)" class="wb short accent" style="flex-shrink:0;margin-left:auto;margin-bottom:0;padding:4px 14px;cursor:pointer;display:flex;align-items:center;justify-content:center;"><div class="wbd" style="color:rgba(52,32,6,0.7);font-size:10.5px;">+ Create NPC</div></div>
+  </div>
+  <div class="wr">
+    <div class="wb short" style="margin-bottom:0;"><div class="wbd">Race ▾</div></div>
+    <div class="wb short" style="margin-bottom:0;"><div class="wbd">Class ▾</div></div>
+    <div class="wb short" style="margin-bottom:0;"><div class="wbd">City ▾</div></div>
+    <div class="wb short" style="margin-bottom:0;"><div class="wbd">Sort ▾</div></div>
+  </div>
+  <div class="dv"></div>
+  <div class="scroll-body">
+    <div style="display:flex;flex-wrap:wrap;gap:12px;">
+    ${[
+      { n:'Mira Ashveil',       d:'Blacksmith · Human · Irongate',   c:2, desc:'A taciturn smith whose work speaks louder than words — and whose secrets run deeper than her forge.',       pronouns:'she/her',  race:'Human',    role:'Blacksmith', age:'38', align:'Neutral Good',   posture:'Slouchy',         speed:'Steady Drumbeat', voice:'Chest · Throat',       pubDesc:'A broad-shouldered woman with soot-dark hands and a measuring gaze. Rarely wastes words.' },
+      { n:'Lord Vane',          d:'Nobleman · Elf · Eldenmoor',       c:3, desc:'Gracious on the surface, calculating beneath. Every favour he grants carries a hidden ledger entry.',       pronouns:'he/him',   race:'Elf',      role:'Nobleman',   age:'312', align:'Lawful Neutral', posture:'Puffed Chest',    speed:'Drawn-Out',       voice:'Head / Sinus',         pubDesc:'Impeccably dressed. Speaks slowly, as though every word is a gift he is considering withholding.' },
+      { n:'Sister Odalys',      d:'Cleric · Halfling · Thornhaven',   c:1, desc:'Heals the wounded without question and prays without ceasing — yet her god\'s name she never speaks aloud.', pronouns:'she/her',  race:'Halfling', role:'Cleric',     age:'52',  align:'Lawful Good',    posture:'Close Talker',    speed:'Fast',            voice:'Chest · Mouth / Oral', pubDesc:'Warm eyes and quick hands. Tends to stand closer than comfort allows.' },
+      { n:'Gruk the Elder',     d:'Shaman · Orc · The Wastes',        c:1, desc:'Keeper of ancestral flame and living memory. The Wastes\' dead still answer when he calls.',               pronouns:'he/him',   race:'Orc',      role:'Shaman',     age:'71',  align:'True Neutral',   posture:'Likes to Lean In', speed:'Slow',            voice:'Chest',                pubDesc:'A mountain of muscle gone to grey. His silence carries more weight than most men\'s speeches.' },
+      { n:'Captain Rael',       d:'Guard · Human · Irongate',         c:2, desc:'Keeps order on the docks with a firm hand and a selective memory for who pays his wage.',                   pronouns:'he/him',   race:'Human',    role:'Guard',      age:'44',  align:'Lawful Neutral', posture:'Puffed Chest',    speed:'Steady Drumbeat', voice:'Chest · Throat',       pubDesc:'Steel-jawed and watchful. Knows every face on the docks and forgets the ones he\'s paid to.' },
+      { n:'The Pale Archivist', d:'Unknown · Unknown · ???',          c:1, desc:'Has catalogued every secret in three kingdoms. Sells none of them — yet.',                                  pronouns:'they/them',race:'Unknown',  role:'Archivist',  age:'???', align:'True Neutral',   posture:'Slouchy',         speed:'Erratic',         voice:'Nasal · Head / Sinus', pubDesc:'Colourless hair, colourless eyes. Always writing. Never explains what.' },
+      { n:'Dock Master Fenn',   d:'Official · Human · Irongate',      c:2, desc:'Controls what enters and leaves Irongate. A reasonable man, at a reasonable price.',                        pronouns:'he/him',   race:'Human',    role:'Official',   age:'55',  align:'Lawful Neutral', posture:'Close Talker',    speed:'Steady Drumbeat', voice:'Chest · Oral',         pubDesc:'Jovial handshakes and ink-stained ledgers. His smile never quite meets his eyes.' },
+      { n:'Grizel the Fence',   d:'Criminal · Gnome · Irongate',      c:1, desc:'Buys anything, sells everything, remembers nothing — officially. Her ledger tells a different story.',      pronouns:'she/her',  race:'Gnome',    role:'Criminal',   age:'89',  align:'Chaotic Neutral',posture:'Likes to Lean In', speed:'Fast',            voice:'Throat · Mouth / Oral',pubDesc:'Quick fingers and quicker denials. Never holds stolen goods longer than a tide cycle.' },
+    ].map(({n,d,c,desc,pronouns,race,role,age,align,posture,speed,voice,pubDesc}) => `
+    <div onclick="flipLibCard(this)" class="pc-card" style="perspective:700px;cursor:pointer;">
+      <div class="lib-card-inner" style="position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform 0.52s cubic-bezier(0.4,0,0.2,1);">
+        <!-- FRONT -->
+        <div class="pc-card-npc" style="position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:2.5px solid rgba(78,48,10,0.72);border-radius:12px;overflow:hidden;box-shadow:0 3px 10px rgba(0,0,0,0.22);">
+          <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(22,10,1,0.12) 0%,rgba(14,6,0,0.42) 48%,rgba(8,3,0,0.88) 100%);pointer-events:none;"></div>
+          <div style="position:absolute;inset:6px;border:1px solid rgba(215,170,72,0.22);border-radius:9px;pointer-events:none;"></div>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+            <div style="font-family:'Crimson Text',serif;font-style:italic;font-size:10px;color:rgba(255,228,165,0.15);letter-spacing:0.1em;">Portrait</div>
+          </div>
+          <div style="position:absolute;top:0;left:0;right:0;padding:10px 46px 14px 12px;background:linear-gradient(180deg,rgba(16,6,0,0.82) 0%,transparent 100%);">
+            <div style="font-family:'Cinzel',serif;font-size:12px;color:rgba(255,234,175,0.97);letter-spacing:0.04em;text-shadow:0 1px 6px rgba(0,0,0,0.88);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n}</div>
+            <div style="font-family:'Crimson Text',serif;font-style:italic;font-size:9px;color:rgba(228,194,128,0.82);margin-top:2px;text-shadow:0 1px 4px rgba(0,0,0,0.7);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d}</div>
+          </div>
+          <div style="position:absolute;top:10px;right:10px;text-align:center;">
+            <div style="font-family:'Cinzel',serif;font-size:15px;color:rgba(255,245,220,0.92);line-height:1;text-shadow:0 1px 4px rgba(0,0,0,0.85);">${c}</div>
+            <div style="font-family:'Cinzel',serif;font-size:5.5px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(240,228,190,0.70);margin-top:2px;text-shadow:0 1px 2px rgba(0,0,0,0.7);">campaigns</div>
+          </div>
+          <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 12px 11px;background:linear-gradient(0deg,rgba(8,3,0,0.92) 0%,rgba(8,3,0,0.72) 70%,transparent 100%);pointer-events:none;">
+            <div style="font-family:'Crimson Text',serif;font-style:italic;font-size:8.5px;color:rgba(228,200,148,0.88);line-height:1.45;text-shadow:0 1px 4px rgba(0,0,0,0.9);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;">${desc}</div>
+          </div>
+        </div>
+        <!-- BACK -->
+        <div style="position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateY(180deg);border:2.5px solid rgba(78,48,10,0.72);border-radius:12px;overflow:hidden;background:linear-gradient(148deg,#2a1a08,#1a0f04);box-shadow:0 3px 10px rgba(0,0,0,0.22);display:flex;flex-direction:column;padding:14px 15px 12px;box-sizing:border-box;">
+          <div style="position:absolute;inset:6px;border:1px solid rgba(215,170,72,0.18);border-radius:9px;pointer-events:none;"></div>
+          <!-- Name header -->
+          <div style="font-family:'Cinzel',serif;font-size:9.5px;color:rgba(255,228,165,0.90);letter-spacing:0.05em;text-shadow:0 1px 5px rgba(0,0,0,0.9);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:5px;">${n}</div>
+          <div style="border-top:0.5px solid rgba(215,170,72,0.22);margin-bottom:5px;"></div>
+          <!-- Stats grid -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 6px;margin-bottom:4px;">
+            <div><div style="font-family:'Cinzel',serif;font-size:5.5px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(215,170,72,0.55);margin-bottom:1px;">Pronouns</div><div style="font-family:'Crimson Text',serif;font-size:8.5px;color:rgba(228,200,148,0.88);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${pronouns}</div></div>
+            <div><div style="font-family:'Cinzel',serif;font-size:5.5px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(215,170,72,0.55);margin-bottom:1px;">Age</div><div style="font-family:'Crimson Text',serif;font-size:8.5px;color:rgba(228,200,148,0.88);line-height:1.2;">${age}</div></div>
+            <div><div style="font-family:'Cinzel',serif;font-size:5.5px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(215,170,72,0.55);margin-bottom:1px;">Race</div><div style="font-family:'Crimson Text',serif;font-size:8.5px;color:rgba(228,200,148,0.88);line-height:1.2;">${race}</div></div>
+            <div><div style="font-family:'Cinzel',serif;font-size:5.5px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(215,170,72,0.55);margin-bottom:1px;">Alignment</div><div style="font-family:'Crimson Text',serif;font-size:8px;color:rgba(228,200,148,0.88);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${align}</div></div>
+            <div><div style="font-family:'Cinzel',serif;font-size:5.5px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(215,170,72,0.55);margin-bottom:1px;">Posture</div><div style="font-family:'Crimson Text',serif;font-size:8px;color:rgba(228,200,148,0.88);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${posture}</div></div>
+            <div><div style="font-family:'Cinzel',serif;font-size:5.5px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(215,170,72,0.55);margin-bottom:1px;">Speed</div><div style="font-family:'Crimson Text',serif;font-size:8px;color:rgba(228,200,148,0.88);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${speed}</div></div>
+          </div>
+          <!-- Voice -->
+          <div style="margin-bottom:4px;"><div style="font-family:'Cinzel',serif;font-size:5.5px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(215,170,72,0.55);margin-bottom:2px;">Voice Placement</div><div style="font-family:'Crimson Text',serif;font-style:italic;font-size:8px;color:rgba(228,200,148,0.80);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${voice}</div></div>
+          <!-- Delete button -->
+          <div onclick="event.stopPropagation()" style="margin-top:6px;font-family:'Cinzel',serif;font-size:7.5px;letter-spacing:0.08em;color:rgba(255,200,200,0.90);background:rgba(120,25,25,0.65);border:1px solid rgba(180,50,50,0.40);border-radius:4px;padding:5px 0;text-align:center;cursor:pointer;flex-shrink:0;">✕ Delete</div>
+        </div>
+      </div>
+    </div>`).join('')}
+    </div>
+  </div>
+  <div style="margin-top:8px;flex-shrink:0;">
+    <div style="font-family:'Cinzel',serif;font-size:7.5px;letter-spacing:0.14em;color:rgba(105,72,18,0.55);text-transform:uppercase;">1–8 of 42</div>
+  </div>
+  <div class="fold"></div>`
+},
+
+/* 4 · NPC ADD / EDIT ───────────────────── */
+{ label: 'IV · NPC Add / Edit',
+  html: `
+  <div class="pnum">iv · npc — add / edit</div>
+
+  <!-- Nav bar -->
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-shrink:0;">
+    <div onclick="goTo(3)" style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.12em;color:rgba(105,72,18,0.72);text-transform:uppercase;border:1px dashed rgba(110,75,22,0.32);padding:2px 8px;border-radius:2px;cursor:pointer;">← Library</div>
+    <div style="flex:1;border-bottom:0.5px solid rgba(110,75,22,0.14);"></div>
+    <div onclick="saveNpc()" style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.12em;color:rgba(38,88,42,0.85);text-transform:uppercase;border:1px dashed rgba(38,88,42,0.45);background:rgba(38,88,42,0.05);padding:2px 12px;border-radius:2px;cursor:pointer;">✓ Save NPC</div>
+  </div>
+
+  <div class="scroll-body">
+
+    <!-- Portrait + Name block -->
+    <div style="display:flex;gap:10px;margin-bottom:8px;">
+      <div class="npc-img" style="flex-shrink:0;"><div class="npc-img-lbl">Portrait<br>Upload</div></div>
+      <div style="flex:1;min-width:0;">
+        <label class="fi-label">Name *</label>
+        <div style="display:flex;align-items:center;gap:5px;margin-bottom:8px;">
+          <div title="Random Name Generator" style="font-size:13px;border:1px dashed rgba(110,75,22,0.32);border-radius:2px;padding:1px 5px;cursor:pointer;flex-shrink:0;line-height:1.6;">🎲</div>
+          <input class="fi" placeholder="Character's full name" style="flex:1;margin-bottom:0;">
+        </div>
+        <div style="display:flex;gap:6px;">
+          <div style="flex:1;"><label class="fi-label">Pronouns</label><input class="fi" placeholder="he / she / they"></div>
+          <div style="flex:1;"><label class="fi-label">Race *</label><input class="fi" placeholder="Human, Elf, Dwarf…"></div>
+          <div style="flex:1;"><label class="fi-label">Class / Role *</label><input class="fi" placeholder="Guard, Merchant…"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Age / Alignment / City row -->
+    <div style="display:flex;gap:6px;margin-bottom:8px;">
+      <div style="flex:1;">
+        <label class="fi-label">Age</label>
+        <input class="fi" placeholder="—" style="margin-bottom:0;">
+      </div>
+      <div style="flex:2;">
+        <label class="fi-label">Alignment</label>
+        <select class="fi" style="font-style:normal;margin-bottom:0;cursor:pointer;">
+          <option value="">Select…</option>
+          <option>Lawful Good</option><option>Neutral Good</option><option>Chaotic Good</option>
+          <option>Lawful Neutral</option><option>True Neutral</option><option>Chaotic Neutral</option>
+          <option>Lawful Evil</option><option>Neutral Evil</option><option>Chaotic Evil</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Posture / Speed row -->
+    <div style="display:flex;gap:6px;margin-bottom:8px;">
+      <div style="flex:1;">
+        <label class="fi-label">Posture</label>
+        <select class="fi" style="font-style:normal;margin-bottom:0;cursor:pointer;">
+          <option value="">Select…</option>
+          <option>Slouchy</option>
+          <option>Puffed Chest</option>
+          <option>Likes to Lean In</option>
+          <option>Close Talker</option>
+        </select>
+      </div>
+      <div style="flex:1;">
+        <label class="fi-label">Speed</label>
+        <select class="fi" style="font-style:normal;margin-bottom:0;cursor:pointer;">
+          <option value="">Select…</option>
+          <option>Fast</option>
+          <option>Steady Drumbeat</option>
+          <option>Slow</option>
+          <option>Erratic</option>
+          <option>Drawn-Out</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Voice Placement multi-select -->
+    <label class="fi-label" style="margin-bottom:4px;">Voice Placement <span style="font-family:'Crimson Text',serif;font-style:italic;font-size:9px;letter-spacing:0;text-transform:none;color:rgba(105,72,18,0.48);">select all that apply</span></label>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">
+      ${[
+        ['Chest','Low Resonance', true],
+        ['Throat','Mid-Back Resonance', false],
+        ['Mouth / Oral','Forward Resonance', false],
+        ['Nasal','Mask Resonance', false],
+        ['Head / Sinus','High Resonance', false],
+      ].map(([n,s,sel]) => `<div onclick="this.dataset.s=this.dataset.s==='1'?'0':'1';this.style.background=this.dataset.s==='1'?'rgba(130,85,24,0.12)':'rgba(150,110,45,0.04)';this.style.borderColor=this.dataset.s==='1'?'rgba(130,85,24,0.45)':'rgba(110,75,22,0.28)';" data-s="${sel?'1':'0'}" style="font-family:'Crimson Text',serif;font-size:10px;color:rgba(52,32,8,0.78);border:1px dashed ${sel?'rgba(130,85,24,0.45)':'rgba(110,75,22,0.28)'};border-radius:2px;padding:3px 9px;cursor:pointer;background:${sel?'rgba(130,85,24,0.12)':'rgba(150,110,45,0.04)'};" title="${s}"><span style="font-weight:600;">${n}</span><span style="font-style:italic;color:rgba(72,48,12,0.48);font-size:9px;"> · ${s}</span></div>`).join('')}
+    </div>
+
+    <!-- Public Description -->
+    <label class="fi-label">Public Description</label>
+    <div class="wb tall" style="margin-bottom:8px;"><div class="wbd">What players see when this NPC is unlocked…</div></div>
+
+    <!-- Portrait upload -->
+    <label class="fi-label">Portrait Image</label>
+    <div class="wb short"><div class="wbd">Upload · Drag & drop · URL</div></div>
+
+  </div>
+  <div class="fold"></div>`
+},
+
+
+/* 5 · CITY LIBRARY ─────────────────────── */
+{ label: 'V · City Library',
+  html: `
+  <div class="pnum">v · city library</div>
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-shrink:0;">
+    <div onclick="goTo(2)" style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.12em;color:rgba(105,72,18,0.72);text-transform:uppercase;border:1px dashed rgba(110,75,22,0.32);padding:2px 8px;border-radius:2px;cursor:pointer;">← Dashboard</div>
+    <div style="flex:1;font-family:'Cinzel',serif;font-size:13px;color:#2a1804;text-align:center;letter-spacing:0.04em;">City Library</div>
+    <div style="width:70px;"></div>
+  </div>
+  <div class="section-label">All Cities — Library</div>
+  <div style="display:flex;align-items:stretch;gap:8px;margin-bottom:8px;flex-shrink:0;">
+    <div class="wb short" style="width:66.6%;margin-bottom:0;">
+      <div class="wbl">Search</div>
+      <div class="wbd">Name · Type · Region · Tag…</div>
+    </div>
+    <div onclick="goTo(6)" class="wb short accent" style="flex-shrink:0;margin-left:auto;margin-bottom:0;padding:4px 14px;cursor:pointer;display:flex;align-items:center;justify-content:center;"><div class="wbd" style="color:rgba(52,32,6,0.7);font-size:10.5px;">+ Create City</div></div>
+  </div>
+  <div class="wr" style="margin-bottom:0;">
+    <div class="wb short" style="margin-bottom:0;"><div class="wbd">Type ▾</div></div>
+    <div class="wb short" style="margin-bottom:0;"><div class="wbd">Region ▾</div></div>
+    <div class="wb short" style="margin-bottom:0;"><div class="wbd">Sort ▾</div></div>
+  </div>
+  <div class="dv"></div>
+  <div class="scroll-body">
+    <div style="display:flex;flex-wrap:wrap;gap:12px;">
+    ${[
+      { n:'Irongate',   d:'Major Port City · Trading Hub',       c:3, desc:'A city built on iron and salt, where every ship that docks carries both commerce and conspiracy.',                          size:'City',       cond:'Stable',    geo:'Coastal delta, iron-rich lowlands',  arch:'Weathered stone, industrial docks',    climate:'Temperate, frequent sea mists',   religion:'Temple of Kord',        vibe:'Industrious, tense undertow',          langs:"Common, Thieves' Cant",  pubDesc:'A bustling port city at the mouth of the Iron River — known for its iron trade, crowded docks, and uneasy politics.' },
+      { n:'Eldenmoor',  d:'Elven Forest Village · Mysterious',   c:2, desc:'Ancient trees older than memory shelter a community that measures time in centuries, not seasons.',                        size:'Village',    cond:'Thriving',  geo:'Ancient forest, highland mists',     arch:'Grown timber, living wood weaving',    climate:'Cool, leaf-filtered light',       religion:'Circle of the Moon',    vibe:'Ancient, watchful, wary of outsiders', langs:'Elvish, Druidic',        pubDesc:'A village grown into the forest itself, where centuries pass quietly and outsiders are watched with patient suspicion.' },
+      { n:'Thornhaven', d:'Rural Farming Settlement · Peaceful', c:1, desc:"Quiet fields and quieter folk — though the harvest festival hides rites the outside world has long forgotten.",           size:'Village',    cond:'Stable',    geo:'Rolling farmland, river valley',     arch:'Timber frame, thatched roofs',         climate:'Temperate, mild seasons',         religion:'Shrine of Chauntea',    vibe:'Quiet, communal, closed to outsiders', langs:'Common',                 pubDesc:'Peaceful fields and tight-knit folk who keep old traditions — and older secrets — close to the hearth.' },
+      { n:'The Wastes', d:'Desolate Badlands · Dangerous',       c:1, desc:'A cracked expanse where only the desperate or the exiled dare to settle, and survival is its own religion.',              size:'Village',    cond:'Declining', geo:'Cracked salt flats, volcanic ridges', arch:'Salvaged ruins, bone and hide shelters',climate:'Arid, scorching days, freezing nights',religion:'Cult of the Ashen Flame',vibe:'Desperate, violent, brutally honest', langs:'Common, Orcish',         pubDesc:'A wasteland settlement where survival demands strength and trust is a luxury no one can afford.' },
+    ].map(({n,d,c,desc,size,cond,geo,arch,climate,religion,vibe,langs,pubDesc}) => `
+    <div onclick="flipLibCard(this)" class="pc-card" style="perspective:700px;cursor:pointer;">
+      <div class="lib-card-inner" style="position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform 0.52s cubic-bezier(0.4,0,0.2,1);">
+        <!-- FRONT -->
+        <div class="pc-card-city" style="position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:2.5px solid rgba(78,48,10,0.72);border-radius:12px;overflow:hidden;box-shadow:0 3px 10px rgba(0,0,0,0.22);">
+          <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(22,10,1,0.12) 0%,rgba(14,6,0,0.42) 48%,rgba(8,3,0,0.88) 100%);pointer-events:none;"></div>
+          <div style="position:absolute;inset:6px;border:1px solid rgba(215,170,72,0.22);border-radius:9px;pointer-events:none;"></div>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+            <div style="font-family:'Cinzel',serif;font-size:36px;color:rgba(255,228,165,0.10);line-height:1;">🏰</div>
+          </div>
+          <div style="position:absolute;top:0;left:0;right:0;padding:10px 46px 14px 12px;background:linear-gradient(180deg,rgba(16,6,0,0.82) 0%,transparent 100%);">
+            <div style="font-family:'Cinzel',serif;font-size:12px;color:rgba(255,234,175,0.97);letter-spacing:0.04em;text-shadow:0 1px 6px rgba(0,0,0,0.88);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n}</div>
+            <div style="font-family:'Crimson Text',serif;font-style:italic;font-size:9px;color:rgba(228,194,128,0.82);margin-top:2px;text-shadow:0 1px 4px rgba(0,0,0,0.7);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d}</div>
+          </div>
+          <div style="position:absolute;top:10px;right:10px;text-align:center;">
+            <div style="font-family:'Cinzel',serif;font-size:15px;color:rgba(255,245,220,0.92);line-height:1;text-shadow:0 1px 4px rgba(0,0,0,0.85);">${c}</div>
+            <div style="font-family:'Cinzel',serif;font-size:5.5px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(240,228,190,0.70);margin-top:2px;text-shadow:0 1px 2px rgba(0,0,0,0.7);">campaigns</div>
+          </div>
+          <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 12px 11px;background:linear-gradient(0deg,rgba(8,3,0,0.92) 0%,rgba(8,3,0,0.72) 70%,transparent 100%);pointer-events:none;">
+            <div style="font-family:'Crimson Text',serif;font-style:italic;font-size:8.5px;color:rgba(228,200,148,0.88);line-height:1.45;text-shadow:0 1px 4px rgba(0,0,0,0.9);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;">${desc}</div>
+          </div>
+        </div>
+        <!-- BACK -->
+        <div style="position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateY(180deg);border:2.5px solid rgba(78,48,10,0.72);border-radius:12px;overflow:hidden;background:linear-gradient(148deg,#2a1a08,#1a0f04);box-shadow:0 3px 10px rgba(0,0,0,0.22);display:flex;flex-direction:column;padding:16px 16px 14px;box-sizing:border-box;">
+          <div style="position:absolute;inset:6px;border:1px solid rgba(215,170,72,0.22);border-radius:9px;pointer-events:none;"></div>
+          <!-- Name header -->
+          <div style="font-family:'Cinzel',serif;font-size:8.5px;color:rgba(255,228,165,0.90);letter-spacing:0.05em;text-shadow:0 1px 5px rgba(0,0,0,0.9);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:5px;">${n}</div>
+          <div style="border-top:0.5px solid rgba(215,170,72,0.22);margin-bottom:6px;"></div>
+          <!-- Stats — single column -->
+          <div data-scroll-back="1" style="flex:1;min-height:0;display:flex;flex-direction:column;gap:6px;margin-bottom:8px;overflow-y:hidden;">
+            <div><div style="font-family:'Cinzel',serif;font-size:5px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(215,170,72,0.52);">Size</div><div style="font-family:'Crimson Text',serif;font-size:8px;color:rgba(228,200,148,0.88);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${size}</div></div>
+            <div><div style="font-family:'Cinzel',serif;font-size:5px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(215,170,72,0.52);">Condition</div><div style="font-family:'Crimson Text',serif;font-size:8px;color:rgba(228,200,148,0.88);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${cond}</div></div>
+            <div><div style="font-family:'Cinzel',serif;font-size:5px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(215,170,72,0.52);">Geography</div><div style="font-family:'Crimson Text',serif;font-size:8px;color:rgba(228,200,148,0.88);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${geo}</div></div>
+            <div><div style="font-family:'Cinzel',serif;font-size:5px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(215,170,72,0.52);">Architecture</div><div style="font-family:'Crimson Text',serif;font-size:8px;color:rgba(228,200,148,0.88);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${arch}</div></div>
+            <div><div style="font-family:'Cinzel',serif;font-size:5px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(215,170,72,0.52);">Climate</div><div style="font-family:'Crimson Text',serif;font-size:8px;color:rgba(228,200,148,0.88);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${climate}</div></div>
+            <div><div style="font-family:'Cinzel',serif;font-size:5px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(215,170,72,0.52);">Religion</div><div style="font-family:'Crimson Text',serif;font-size:8px;color:rgba(228,200,148,0.88);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${religion}</div></div>
+            <div><div style="font-family:'Cinzel',serif;font-size:5px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(215,170,72,0.52);">Vibe</div><div style="font-family:'Crimson Text',serif;font-size:8px;color:rgba(228,200,148,0.88);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${vibe}</div></div>
+            <div><div style="font-family:'Cinzel',serif;font-size:5px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(215,170,72,0.52);">Languages</div><div style="font-family:'Crimson Text',serif;font-size:8px;color:rgba(228,200,148,0.88);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${langs}</div></div>
+          </div>
+          <!-- Delete button -->
+          <div onclick="event.stopPropagation()" style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.08em;color:rgba(255,200,200,0.90);background:rgba(120,25,25,0.65);border:1px solid rgba(180,50,50,0.40);border-radius:4px;padding:4px 0;text-align:center;cursor:pointer;flex-shrink:0;">✕ Delete</div>
+        </div>
+      </div>
+    </div>`).join('')}
+    </div>
+  </div>
+  <div style="margin-top:8px;flex-shrink:0;">
+    <div style="font-family:'Cinzel',serif;font-size:7.5px;letter-spacing:0.14em;color:rgba(105,72,18,0.55);text-transform:uppercase;">1–4 of 4</div>
+  </div>
+  <div class="fold"></div>`
+},
+
+
+/* 6 · CITY ADD / EDIT ──────────────────── */
+{ label: 'VI · City Add / Edit',
+  html: `
+  <div class="pnum">vi · city — add / edit</div>
+
+  <!-- Nav bar -->
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-shrink:0;">
+    <div onclick="goTo(5)" style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.12em;color:rgba(105,72,18,0.72);text-transform:uppercase;border:1px dashed rgba(110,75,22,0.32);padding:2px 8px;border-radius:2px;cursor:pointer;">← Library</div>
+    <div style="flex:1;border-bottom:0.5px solid rgba(110,75,22,0.14);"></div>
+    <div onclick="saveCity()" style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.12em;color:rgba(38,88,42,0.85);text-transform:uppercase;border:1px dashed rgba(38,88,42,0.45);background:rgba(38,88,42,0.05);padding:2px 12px;border-radius:2px;cursor:pointer;">✓ Save City</div>
+  </div>
+
+  <div class="scroll-body">
+
+    <!-- Image + Name block -->
+    <div style="display:flex;gap:10px;margin-bottom:8px;">
+      <div class="npc-img" style="flex-shrink:0;"><div class="npc-img-lbl">City<br>Image</div></div>
+      <div style="flex:1;min-width:0;">
+        <label class="fi-label">City Name *</label>
+        <div style="display:flex;align-items:center;gap:5px;margin-bottom:8px;">
+          <div title="Random City Name Generator" style="font-size:13px;border:1px dashed rgba(110,75,22,0.32);border-radius:2px;padding:1px 5px;cursor:pointer;flex-shrink:0;line-height:1.6;">🎲</div>
+          <input class="fi" placeholder="City's full name" style="flex:1;margin-bottom:0;">
+        </div>
+        <div style="display:flex;gap:6px;">
+          <div style="flex:1;">
+            <label class="fi-label">Village Size</label>
+            <select class="fi" style="font-style:normal;margin-bottom:0;cursor:pointer;">
+              <option value="">Select…</option>
+              <option>Village</option>
+              <option>Town</option>
+              <option>City</option>
+              <option>Metropolis</option>
+            </select>
+          </div>
+          <div style="flex:1;">
+            <label class="fi-label">Overall Condition</label>
+            <select class="fi" style="font-style:normal;margin-bottom:0;cursor:pointer;">
+              <option value="">Select…</option>
+              <option>Thriving</option>
+              <option>Stable</option>
+              <option>Declining</option>
+              <option>War-Torn</option>
+              <option>Rebuilding</option>
+              <option>Abandoned</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Description -->
+    <label class="fi-label">Description</label>
+    <div class="wb tall" style="margin-bottom:8px;"><div class="wbd">Describe this city — its history, notable landmarks, atmosphere…</div></div>
+
+    <!-- Geographic / Architectural / Climate row -->
+    <div style="display:flex;gap:6px;margin-bottom:8px;">
+      <div style="flex:1;">
+        <label class="fi-label">Geographic Location</label>
+        <input class="fi" placeholder="Coastal plains · Mountain pass…" style="margin-bottom:0;">
+      </div>
+      <div style="flex:1;">
+        <label class="fi-label">Architectural Style</label>
+        <input class="fi" placeholder="Gothic stone · Elven wood…" style="margin-bottom:0;">
+      </div>
+    </div>
+
+    <!-- Climate / Religion row -->
+    <div style="display:flex;gap:6px;margin-bottom:8px;">
+      <div style="flex:1;">
+        <label class="fi-label">Climate &amp; Weather</label>
+        <input class="fi" placeholder="Temperate · Arid · Frozen…" style="margin-bottom:0;">
+      </div>
+      <div style="flex:1;">
+        <label class="fi-label">Dominant Religion</label>
+        <input class="fi" placeholder="Temple of Pelor · Cult of Vecna…" style="margin-bottom:0;">
+      </div>
+    </div>
+
+    <!-- Vibe / Languages row -->
+    <div style="display:flex;gap:6px;margin-bottom:8px;">
+      <div style="flex:1;">
+        <label class="fi-label">Overall Vibe</label>
+        <input class="fi" placeholder="Tense · Welcoming · Lawless…" style="margin-bottom:0;">
+      </div>
+      <div style="flex:1;">
+        <label class="fi-label">Languages Spoken</label>
+        <input class="fi" placeholder="Common · Elvish · Thieves' Cant…" style="margin-bottom:0;">
+      </div>
+    </div>
+
+
+  </div>
+  <div class="fold"></div>`
+},
+
+
+/* 7 · CAMPAIGN LIBRARY ─────────────────── */
+{ label: 'VII · Campaign Library',
+  html: `
+  <div class="pnum">vii · campaign library</div>
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-shrink:0;">
+    <div onclick="goTo(2)" style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.12em;color:rgba(105,72,18,0.72);text-transform:uppercase;border:1px dashed rgba(110,75,22,0.32);padding:2px 8px;border-radius:2px;cursor:pointer;">← Dashboard</div>
+    <div style="flex:1;font-family:'Cinzel',serif;font-size:13px;color:#2a1804;text-align:center;letter-spacing:0.04em;">Campaign Library</div>
+    <div style="width:70px;"></div>
+  </div>
+  <div class="section-label">All Campaigns — Library</div>
+  <div style="display:flex;align-items:stretch;gap:8px;margin-bottom:8px;flex-shrink:0;">
+    <div class="wb short" style="width:66.6%;margin-bottom:0;">
+      <div class="wbl">Search</div>
+      <div class="wbd">Name · Setting · Tag…</div>
+    </div>
+    <div onclick="goTo(8)" class="wb short accent" style="flex-shrink:0;margin-left:auto;margin-bottom:0;padding:4px 14px;cursor:pointer;display:flex;align-items:center;justify-content:center;"><div class="wbd" style="color:rgba(52,32,6,0.7);font-size:10.5px;">+ Create Campaign</div></div>
+  </div>
+  <div class="wr" style="margin-bottom:0;">
+    <div class="wb short" style="margin-bottom:0;"><div class="wbd">Status ▾</div></div>
+    <div class="wb short" style="margin-bottom:0;"><div class="wbd">Setting ▾</div></div>
+    <div class="wb short" style="margin-bottom:0;"><div class="wbd">Sort ▾</div></div>
+  </div>
+  <div class="dv"></div>
+  <div class="scroll-body">
+    <div style="display:flex;flex-wrap:wrap;gap:14px;">
+    ${[
+      { n:'The Shadow of Eldenmoor',  d:'High Fantasy · 4 Players', cities:3, status:'Active', spine:'#0d1810', c1:'#1c3820', c2:'#0d1810' },
+      { n:'Curse of the Iron Throne', d:'Dark Fantasy · 6 Players', cities:2, status:'Active', spine:'#1a0709', c1:'#381218', c2:'#1a0709' },
+      { n:'The Sunken Isles',         d:'Naval · 3 Players',        cities:1, status:'Paused', spine:'#07091a', c1:'#121838', c2:'#07091a' },
+    ].map(({n,d,cities,status,spine,c1,c2}) => `
+    <div onclick="goTo(15)" style="flex-shrink:0;width:180px;height:252px;position:relative;cursor:pointer;border-radius:4px 10px 10px 4px;box-shadow:4px 5px 16px rgba(0,0,0,0.55),inset -1px 0 0 rgba(255,255,255,0.03);">
+      <!-- Spine -->
+      <div style="position:absolute;left:0;top:0;bottom:0;width:16px;background:linear-gradient(90deg,${spine} 0%,${spine}ee 100%);border-radius:4px 0 0 4px;overflow:hidden;">
+        <div style="position:absolute;left:4px;top:0;bottom:0;width:1px;background:linear-gradient(180deg,transparent 8%,rgba(215,170,72,0.22) 25%,rgba(215,170,72,0.22) 75%,transparent 92%);"></div>
+        <div style="position:absolute;left:8px;top:0;bottom:0;width:0.5px;background:linear-gradient(180deg,transparent 8%,rgba(215,170,72,0.10) 25%,rgba(215,170,72,0.10) 75%,transparent 92%);"></div>
+      </div>
+      <!-- Spine-to-cover ridge shadow -->
+      <div style="position:absolute;left:16px;top:0;bottom:0;width:5px;background:linear-gradient(90deg,rgba(0,0,0,0.45),transparent);pointer-events:none;z-index:1;border-radius:0;"></div>
+      <!-- Cover -->
+      <div style="position:absolute;left:16px;top:0;right:0;bottom:0;background:linear-gradient(150deg,${c1} 0%,${c2} 100%);border-radius:0 10px 10px 0;overflow:hidden;">
+        <!-- Subtle texture sheen -->
+        <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.05) 0%,transparent 45%,rgba(0,0,0,0.22) 100%);pointer-events:none;"></div>
+        <!-- Inner gold frame -->
+        <div style="position:absolute;inset:7px;border:1px solid rgba(215,170,72,0.24);border-radius:4px 7px 7px 4px;pointer-events:none;"></div>
+        <!-- City count — top right -->
+        <div style="position:absolute;top:10px;right:10px;text-align:center;">
+          <div style="font-family:'Cinzel',serif;font-size:15px;color:rgba(255,245,220,0.88);line-height:1;text-shadow:0 1px 5px rgba(0,0,0,0.95);">${cities}</div>
+          <div style="font-family:'Cinzel',serif;font-size:5.5px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(240,228,190,0.62);margin-top:2px;text-shadow:0 1px 2px rgba(0,0,0,0.8);">cities</div>
+        </div>
+        <!-- Edit button — bottom -->
+        <div onclick="event.stopPropagation();goTo(8)" style="position:absolute;bottom:12px;left:14px;right:10px;font-family:'Cinzel',serif;font-size:8.5px;letter-spacing:0.10em;text-transform:uppercase;padding:6px 8px;border-radius:4px;cursor:pointer;color:rgba(255,234,175,0.90);border:1px solid rgba(215,170,72,0.42);background:rgba(40,30,10,0.72);text-align:center;">Edit</div>
+        <!-- Center content -->
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 13px;">
+          <div style="font-family:'Cinzel',serif;font-size:7.5px;color:rgba(215,170,72,0.45);letter-spacing:0.25em;margin-bottom:8px;">✦ ✦ ✦</div>
+          <div style="font-family:'Cinzel',serif;font-size:11px;color:rgba(255,234,175,0.96);text-align:center;text-shadow:0 1px 8px rgba(0,0,0,0.95);letter-spacing:0.05em;line-height:1.5;">${n}</div>
+          <div style="width:32px;height:0.5px;background:linear-gradient(90deg,transparent,rgba(215,170,72,0.48),transparent);margin:8px 0;"></div>
+          <div style="font-family:'Crimson Text',serif;font-style:italic;font-size:8.5px;color:rgba(215,185,130,0.72);text-align:center;line-height:1.45;">${d}</div>
+        </div>
+      </div>
+    </div>`).join('')}
+    </div>
+  </div>
+  <div style="margin-top:8px;flex-shrink:0;">
+    <div style="font-family:'Cinzel',serif;font-size:7.5px;letter-spacing:0.14em;color:rgba(105,72,18,0.55);text-transform:uppercase;">1–3 of 3</div>
+  </div>
+  <div class="fold"></div>`
+},
+
+
+/* 8 · CAMPAIGN CREATOR ─────────────────── */
+{ label: 'VIII · Campaign Creator',
+  html: `
+  <div class="pnum">viii · campaign creator</div>
+
+  <!-- Nav bar -->
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-shrink:0;">
+    <div onclick="goTo(7)" style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.12em;color:rgba(105,72,18,0.72);text-transform:uppercase;border:1px dashed rgba(110,75,22,0.32);padding:2px 8px;border-radius:2px;cursor:pointer;">← Library</div>
+    <div style="flex:1;border-bottom:0.5px solid rgba(110,75,22,0.14);"></div>
+  </div>
+
+  <!-- Scrollable body: name + description + lists -->
+  <div class="scroll-body">
+
+    <!-- Campaign Name -->
+    <label class="fi-label">Campaign Name *</label>
+    <input class="fi" placeholder="The Shadow of Eldenmoor…">
+
+    <!-- Campaign Description -->
+    <label class="fi-label">Description</label>
+    <div class="wb tall" style="margin-bottom:12px;"><div class="wbd">Describe the overarching story, tone, and setting…</div></div>
+
+    <!-- Available Cities section header -->
+    <div style="font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(105,72,18,0.65);border-bottom:0.5px solid rgba(110,75,22,0.22);padding-bottom:4px;margin-bottom:8px;">Available Cities</div>
+    <div class="wb short" style="margin-bottom:10px;">
+      <div class="wbl">Search</div>
+      <div class="wbd">Name · Type · Region · Tag…</div>
+    </div>
+
+    <!-- Card viewer: stack (left) + main city card (right) -->
+    <div style="display:flex;gap:40px;justify-content:center;align-items:flex-start;margin-bottom:10px;">
+
+      <!-- Card stack left — remaining cities -->
+      <div id="city-card-stack" onclick="swapCityCard()" class="pc-card" style="position:relative;cursor:pointer;">
+        <div style="position:absolute;top:8px;left:8px;right:-8px;bottom:-8px;background:rgba(202,174,122,0.50);border:2.5px solid rgba(88,56,12,0.26);border-radius:12px;transform:rotate(6deg);"></div>
+        <div style="position:absolute;top:4px;left:4px;right:-4px;bottom:-4px;background:rgba(218,190,140,0.65);border:2.5px solid rgba(88,56,12,0.34);border-radius:12px;transform:rotate(3deg);"></div>
+        <div style="position:absolute;inset:0;background:linear-gradient(148deg,rgba(240,218,168,0.92),rgba(215,184,124,0.88));border:2.5px solid rgba(82,52,10,0.62);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;box-shadow:inset 0 0 0 1.5px rgba(198,152,55,0.20);">
+          <div style="position:absolute;inset:7px;border:1px solid rgba(140,95,28,0.20);border-radius:9px;pointer-events:none;"></div>
+          <div style="font-family:'Cinzel',serif;font-size:34px;color:rgba(82,52,10,0.22);line-height:1;">🏰</div>
+          <div id="city-stack-count" style="font-family:'Cinzel',serif;font-size:8px;color:rgba(72,48,12,0.52);letter-spacing:0.08em;text-align:center;line-height:1.8;">3 of 4<br>remaining</div>
+        </div>
+      </div>
+
+      <!-- Main city card right -->
+      <div id="city-main-card" class="pc-card pc-card-city" style="position:relative;border:2.5px solid rgba(78,48,10,0.72);border-radius:12px;overflow:hidden;">
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(22,10,1,0.12) 0%,rgba(14,6,0,0.42) 48%,rgba(8,3,0,0.88) 100%);"></div>
+        <div style="position:absolute;inset:6px;border:1px solid rgba(215,170,72,0.22);border-radius:9px;pointer-events:none;"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+          <div style="font-family:'Cinzel',serif;font-size:36px;color:rgba(255,228,165,0.10);line-height:1;">🏰</div>
+        </div>
+        <div style="position:absolute;top:0;left:0;right:0;padding:10px 12px 14px;background:linear-gradient(180deg,rgba(16,6,0,0.82) 0%,transparent 100%);">
+          <div class="city-cname" style="font-family:'Cinzel',serif;font-size:13px;color:rgba(255,234,175,0.97);letter-spacing:0.04em;text-shadow:0 1px 6px rgba(0,0,0,0.88);">Silverkeep</div>
+          <div class="city-ctype" style="font-family:'Crimson Text',serif;font-style:italic;font-size:10px;color:rgba(228,194,128,0.82);margin-top:2px;text-shadow:0 1px 4px rgba(0,0,0,0.7);">Mountain Stronghold</div>
+        </div>
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:14px 12px 10px;background:linear-gradient(0deg,rgba(10,4,0,0.94) 0%,rgba(10,4,0,0.60) 70%,transparent 100%);">
+          <div class="city-cdesc" style="font-family:'Crimson Text',serif;font-size:10px;color:rgba(228,200,145,0.92);line-height:1.5;text-shadow:0 1px 3px rgba(0,0,0,0.9);">A fortified city carved into the northern peaks, known for its dwarven architecture and iron-clad militia.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Fat arrow Add to Campaign button — under right card -->
+    <div style="display:flex;gap:40px;justify-content:center;margin-top:10px;margin-bottom:14px;">
+      <div style="width:180px;flex-shrink:0;"></div>
+      <div style="width:180px;display:flex;justify-content:center;">
+        <div onclick="addCityToSelected()" style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(34,80,38,0.94);background:rgba(38,88,42,0.08);border:2px solid rgba(38,88,42,0.52);border-radius:7px;padding:8px 24px;cursor:pointer;display:inline-flex;flex-direction:column;align-items:center;gap:4px;box-shadow:0 2px 5px rgba(38,88,42,0.10);">
+          Add to Campaign <span style="font-size:44px;line-height:1;color:rgba(34,80,38,0.80);">&#11015;</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Campaign Cities -->
+    <div class="dv" id="city-sel-divider"></div>
+    <div style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(105,72,18,0.62);margin-bottom:7px;">Campaign Cities — <span id="city-sel-count">2</span> added</div>
+    <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:8px;">
+      <div id="city-selected-stack" style="flex-shrink:0;"></div>
+      <div id="city-detail-panel" style="flex:1;min-width:0;"></div>
+    </div>
+
+    <div style="height:16px;flex-shrink:0;"></div>
+
+  </div><!-- end scroll-body -->
+
+  <!-- Fixed footer buttons -->
+  <div style="display:flex;gap:6px;flex-shrink:0;padding-top:8px;border-top:0.5px solid rgba(110,75,22,0.14);margin-top:4px;">
+    <div class="wb short" style="flex:1;margin-bottom:0;text-align:center;cursor:pointer;"><div class="wbd">Cancel</div></div>
+    <div class="wb short accent" style="flex:2;margin-bottom:0;text-align:center;cursor:pointer;"><div class="wbd" style="color:rgba(52,32,6,0.72);">✓ Create Campaign</div></div>
+  </div>
+  <div class="fold"></div>`
+},
+
+/* 9 · EDIT CAMPAIGN NPCS ───────────────── */
+{ label: 'IX · Edit Campaign NPCs',
+  html: `
+  <div class="pnum">ix · edit campaign npcs</div>
+
+  <!-- Nav bar -->
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-shrink:0;">
+    <div onclick="goTo(8)" style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.12em;color:rgba(105,72,18,0.72);text-transform:uppercase;border:1px dashed rgba(110,75,22,0.32);padding:2px 8px;border-radius:2px;cursor:pointer;">← Campaign</div>
+    <div style="font-family:'Crimson Text',serif;font-style:italic;font-size:10px;color:rgba(72,48,12,0.62);flex:1;text-align:center;">Irongate · The Shadow of Eldenmoor</div>
+  </div>
+
+  <div class="scroll-body">
+
+    <!-- ── REVIEW NPC ── -->
+    <div style="font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(105,72,18,0.65);border-bottom:0.5px solid rgba(110,75,22,0.22);padding-bottom:4px;margin-bottom:8px;">Review NPCs</div>
+    <div class="wb short" style="margin-bottom:10px;">
+      <div class="wbl">Search</div>
+      <div class="wbd">Name · Class · Race · Tag…</div>
+    </div>
+
+    <!-- Card viewer: stack left + main card right — both playing-card sized (180×252, 5:7) -->
+    <div style="display:flex;gap:40px;justify-content:center;align-items:flex-start;margin-bottom:10px;">
+
+      <!-- Card stack (left) — remaining NPCs -->
+      <div id="npc-card-stack" onclick="swapNpcCard()" class="pc-card" style="position:relative;cursor:pointer;">
+        <div style="position:absolute;top:10px;left:10px;right:-10px;bottom:-10px;background:rgba(202,174,122,0.50);border:2.5px solid rgba(88,56,12,0.26);border-radius:12px;transform:rotate(6deg);"></div>
+        <div style="position:absolute;top:5px;left:5px;right:-5px;bottom:-5px;background:rgba(218,190,140,0.65);border:2.5px solid rgba(88,56,12,0.34);border-radius:12px;transform:rotate(3deg);"></div>
+        <div style="position:absolute;inset:0;background:linear-gradient(148deg,rgba(240,218,168,0.92),rgba(215,184,124,0.88));border:2.5px solid rgba(82,52,10,0.62);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;box-shadow:inset 0 0 0 1.5px rgba(198,152,55,0.20);">
+          <div style="position:absolute;inset:7px;border:1px solid rgba(140,95,28,0.20);border-radius:9px;pointer-events:none;"></div>
+          <div style="font-family:'Cinzel',serif;font-size:38px;color:rgba(82,52,10,0.22);line-height:1;">⚔</div>
+          <div id="npc-stack-count" style="font-family:'Cinzel',serif;font-size:8px;color:rgba(72,48,12,0.52);letter-spacing:0.08em;text-align:center;line-height:1.8;">4 of 5<br>remaining</div>
+        </div>
+      </div>
+
+      <!-- Main NPC card (right) — same 180×252 -->
+      <div id="npc-main-card" class="pc-card pc-card-npc" style="position:relative;border:2.5px solid rgba(78,48,10,0.72);border-radius:12px;overflow:hidden;">
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(22,10,1,0.12) 0%,rgba(14,6,0,0.42) 48%,rgba(8,3,0,0.88) 100%);"></div>
+        <div style="position:absolute;inset:6px;border:1px solid rgba(215,170,72,0.22);border-radius:9px;pointer-events:none;"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+          <div style="font-family:'Crimson Text',serif;font-style:italic;font-size:10px;color:rgba(255,228,165,0.15);letter-spacing:0.1em;">Portrait</div>
+        </div>
+        <div style="position:absolute;top:0;left:0;right:0;padding:10px 12px 14px;background:linear-gradient(180deg,rgba(16,6,0,0.82) 0%,transparent 100%);">
+          <div class="npc-cname" style="font-family:'Cinzel',serif;font-size:13px;color:rgba(255,234,175,0.97);letter-spacing:0.04em;text-shadow:0 1px 6px rgba(0,0,0,0.88);">Captain Rael</div>
+          <div class="npc-crole" style="font-family:'Crimson Text',serif;font-style:italic;font-size:10px;color:rgba(228,194,128,0.82);margin-top:2px;text-shadow:0 1px 4px rgba(0,0,0,0.7);">Guard Captain · Human · Lawful Good</div>
+        </div>
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:14px 12px 10px;background:linear-gradient(0deg,rgba(10,4,0,0.94) 0%,rgba(10,4,0,0.60) 70%,transparent 100%);">
+          <div class="npc-cdesc" style="font-family:'Crimson Text',serif;font-size:10px;color:rgba(228,200,145,0.92);line-height:1.5;text-shadow:0 1px 3px rgba(0,0,0,0.9);">A grizzled veteran who keeps the peace in Irongate's lower docks. Known for bending the rules when coin is involved.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Fat arrow Add button — aligned under main (right) card -->
+    <div style="display:flex;gap:40px;justify-content:center;margin-top:10px;margin-bottom:14px;">
+      <div style="width:180px;flex-shrink:0;"></div>
+      <div style="width:180px;display:flex;justify-content:center;">
+        <div onclick="addNpcToSelected()" style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(34,80,38,0.94);background:rgba(38,88,42,0.08);border:2px solid rgba(38,88,42,0.52);border-radius:7px;padding:8px 24px;cursor:pointer;display:inline-flex;flex-direction:column;align-items:center;gap:4px;box-shadow:0 2px 5px rgba(38,88,42,0.10);">
+          Add to City <span style="font-size:44px;line-height:1;color:rgba(34,80,38,0.80);">&#11015;</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Accepted NPCs — two-column -->
+    <div class="dv" id="npc-sel-divider"></div>
+    <div style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(105,72,18,0.62);margin-bottom:7px;">Accepted NPCs — <span id="npc-sel-count">2</span> added</div>
+    <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:8px;">
+      <div id="npc-selected-stack" style="flex-shrink:0;"></div>
+      <div id="npc-secrets-panel" style="flex:1;min-width:0;"></div>
+    </div>
+
+    <div style="height:32px;flex-shrink:0;"></div>
+
+  </div>
+  <div class="fold"></div>`
+},
+
+
+
+/* 15 · GOLD LEDGER ─────────────────────── */
+{ label: 'XV · Gold Ledger',
+  html: `
+  <div class="pnum">xv · gold management · dm panel</div>
+  <div style="margin-bottom:8px;flex-shrink:0;">
+    <div onclick="goTo(15,-1)" style="display:inline-block;font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.12em;color:rgba(105,72,18,0.72);text-transform:uppercase;border:1px dashed rgba(110,75,22,0.32);padding:2px 8px;border-radius:2px;cursor:pointer;">← Campaign</div>
+  </div>
+  <div class="section-label">Party Ledger</div>
+  <div class="page-title" style="font-size:16px;">Gold & Currency</div>
+  <div class="page-sub">Manage gold for players and the party pool</div>
+  <div class="wb" style="margin-bottom:10px;flex-shrink:0;">
+    <div class="wbl">Party Gold Pool</div>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:4px;">
+      <div class="gold-val" style="font-size:24px;">120 gp</div>
+      <div>
+        <div class="wb short accent" style="margin-bottom:4px;padding:3px 10px;text-align:center;cursor:pointer;"><div class="wbd" style="font-size:10px;color:rgba(52,32,6,0.68);">+ Add to Party</div></div>
+        <div class="wb short" style="margin-bottom:0;padding:3px 10px;text-align:center;cursor:pointer;"><div class="wbd" style="font-size:10px;">− Remove</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="dv"></div>
+  <div class="section-label">Individual Players</div>
+  <div class="scroll-body">
+    ${[
+      ['Aldric Stormborn','45 gp'],
+      ['Lyra Duskmantle','32 gp'],
+      ['Theron of Eastmere','18 gp'],
+      ['Selene the Grey','60 gp'],
+    ].map(([name,gold]) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;margin-bottom:5px;border:1px dashed rgba(110,75,22,0.26);border-radius:2px;background:rgba(150,110,45,0.03);">
+      <div style="width:28px;height:28px;border-radius:50%;border:1px dashed rgba(110,75,22,0.28);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <div style="font-family:'Cinzel',serif;font-size:8px;color:rgba(105,72,18,0.48);">${name[0]}${name.split(' ')[1]?.[0]||''}</div>
+      </div>
+      <div style="flex:1;">
+        <div style="font-family:'Cinzel',serif;font-size:10.5px;color:#2a1804;">${name}</div>
+        <div class="gold-lbl">${gold}</div>
+      </div>
+      <div style="display:flex;gap:5px;">
+        <div class="wb short" style="margin-bottom:0;padding:2px 8px;cursor:pointer;"><div class="wbd" style="font-size:9px;">+gp</div></div>
+        <div class="wb short" style="margin-bottom:0;padding:2px 8px;cursor:pointer;"><div class="wbd" style="font-size:9px;">−gp</div></div>
+      </div>
+    </div>`).join('')}
+    <div class="dv"></div>
+    <div class="wb short">
+      <div class="wbl">Transaction History</div>
+      <div class="wbd">View all gold transfers · store purchases · DM adjustments</div>
+    </div>
+  </div>
+  <div class="fold"></div>`
+},
+
+/* 16 · PLAYER INVITES ──────────────────── */
+{ label: 'XVI · Player Invites',
+  html: `
+  <div class="pnum">xvi · player invitations</div>
+  <div style="margin-bottom:8px;flex-shrink:0;">
+    <div onclick="goTo(15,-1)" style="display:inline-block;font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.12em;color:rgba(105,72,18,0.72);text-transform:uppercase;border:1px dashed rgba(110,75,22,0.32);padding:2px 8px;border-radius:2px;cursor:pointer;">← Campaign</div>
+  </div>
+  <div class="section-label">Invite Players to Campaign</div>
+  <div class="page-title" style="font-size:16px;">Invite to Realm</div>
+  <div class="page-sub">Campaign: The Shadow of Eldenmoor</div>
+  <div class="dv"></div>
+  <div class="scroll-body">
+    <div class="section-label">Send by Email</div>
+    <label class="fi-label">Player Email Address</label>
+    <input class="fi" placeholder="player@adventurer.com">
+    <label class="fi-label">Starting Gold</label>
+    <input class="fi" placeholder="50 gp (DM sets amount)">
+    <label class="fi-label">Personal Message (optional)</label>
+    <div class="wb" style="min-height:46px;margin-bottom:10px;"><div class="wbd">Welcome message for the campaign invite…</div></div>
+    <div class="wb short accent" style="text-align:center;cursor:pointer;margin-bottom:14px;">
+      <div class="wbd" style="color:rgba(52,32,6,0.72);font-weight:600;">Send Invitation</div>
+    </div>
+    <div class="dv"></div>
+    <div class="section-label">Share Invite Code</div>
+    <div class="wb ai" style="text-align:center;margin-bottom:10px;">
+      <div class="wbl" style="text-align:center;">Campaign Code</div>
+      <div style="font-family:'Cinzel',serif;font-size:22px;color:rgba(78,48,130,0.58);letter-spacing:0.28em;margin-top:4px;">ELDR-4729</div>
+      <div style="font-family:'Crimson Text',serif;font-style:italic;font-size:10px;color:rgba(58,42,88,0.48);margin-top:4px;">Players enter this code to join</div>
+    </div>
+    <div class="section-label">Current Players (4 / 6 max)</div>
+    ${['Aldric Stormborn','Lyra Duskmantle','Theron of Eastmere','Selene the Grey'].map(n=>`
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;">
+      <div style="width:8px;height:8px;border-radius:50%;background:rgba(38,88,42,0.44);flex-shrink:0;"></div>
+      <div style="font-family:'Crimson Text',serif;font-size:12px;color:rgba(58,38,10,0.68);">${n}</div>
+      <div style="flex:1;"></div>
+      <div style="font-family:'Cinzel',serif;font-size:7.5px;color:rgba(105,72,18,0.38);text-transform:uppercase;letter-spacing:0.1em;">Active</div>
+    </div>`).join('')}
+  </div>
+  <div class="fold"></div>`
+},
+
+
+/* 17 · SHOP LIBRARY ────────────────────── */
+{ label: 'XVII · Location Library',
+  html: `
+  <div class="pnum">xvii · location library</div>
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-shrink:0;">
+    <div onclick="goTo(2)" style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.12em;color:rgba(105,72,18,0.72);text-transform:uppercase;border:1px dashed rgba(110,75,22,0.32);padding:2px 8px;border-radius:2px;cursor:pointer;">← Dashboard</div>
+    <div style="flex:1;font-family:'Cinzel',serif;font-size:13px;color:#2a1804;text-align:center;letter-spacing:0.04em;">Location Library</div>
+    <div onclick="goTo(13)" class="wb short accent" style="flex-shrink:0;margin-bottom:0;padding:4px 14px;cursor:pointer;display:flex;align-items:center;justify-content:center;"><div class="wbd" style="color:rgba(52,32,6,0.7);font-size:10.5px;">+ Create Location</div></div>
+  </div>
+  <div class="section-label">All Locations — Library</div>
+  <div style="display:flex;align-items:stretch;gap:8px;margin-bottom:8px;flex-shrink:0;">
+    <div class="wb short" style="flex:1;margin-bottom:0;">
+      <div class="wbl">Search</div>
+      <div class="wbd">Name · Type · City · Tag…</div>
+    </div>
+    <div class="wb short" style="flex-shrink:0;margin-bottom:0;min-width:64px;">
+      <div class="wbl">Type</div>
+      <div class="wbd">All</div>
+    </div>
+  </div>
+  <div class="scroll-body">
+    <div style="display:flex;flex-wrap:wrap;gap:12px;">
+    ${[
+      { n:'The Iron Anvil',    d:'Blacksmith · Irongate',   c:2, items:['Longsword · 15 gp','Shortsword · 10 gp','Handaxe · 5 gp','Dagger · 2 gp','Warhammer · 15 gp','Iron Shield · 12 gp','Chain Mail · 75 gp','Scale Mail · 50 gp','Spear · 1 gp'] },
+      { n:'The Gilded Goblet', d:'Tavern · Eldenmoor',       c:3, items:['Ale · 4 cp','Wine · 2 sp','Mead · 5 cp','Hearty Stew · 1 sp','Hot Bread · 2 cp','Room &amp; Board · 5 sp','Strong Spirits · 1 sp'] },
+      { n:"Witch's Wares",     d:'Apothecary · Thornhaven', c:1, items:['Healing Potion · 50 gp','Antitoxin · 50 gp','Holy Water · 25 gp',"Alchemist's Fire · 50 gp",'Acid Vial · 25 gp','Poison Vial · 100 gp'] },
+      { n:'The Shadowed Tome', d:'Bookshop · Irongate',      c:2, items:['Spellbook (blank) · 50 gp','Scroll of Identify · 50 gp','Arcane Focus · 20 gp','Ink (1 oz) · 10 gp','Parchment · 1 sp','Quill · 1 cp','Research Notes · 2 gp'] },
+      { n:"Rael's Outfitters", d:'General · Irongate',       c:2, items:['Rope (50 ft) · 1 gp','Torch · 1 cp','Rations (1 day) · 5 sp','Backpack · 2 gp','Waterskin · 2 sp','Tinderbox · 5 sp','Blanket · 5 sp','Lantern · 5 gp'] },
+      { n:'The Jade Compass',  d:'Cartographer · Eldenmoor', c:1, items:['Local Map · 5 gp','Regional Map · 20 gp','Blank Parchment · 1 sp','Compass · 10 gp','Surveying Notes · 3 gp'] },
+      { n:"Fenn's Dockside",   d:'Seafarer · Irongate',      c:2, items:['Fishing Net · 1 gp','Hemp Rope · 1 gp','Lantern · 5 gp','Rowboat Hire · 2 gp','Signal Whistle · 5 cp',"Sailor's Garb · 1 gp"] },
+    ].map(({n,d,c,items}) => `
+    <div onclick="flipLibCard(this)" class="pc-card" style="perspective:700px;cursor:pointer;">
+      <div class="lib-card-inner" style="position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform 0.52s cubic-bezier(0.4,0,0.2,1);">
+        <!-- FRONT -->
+        <div class="pc-card-shop" style="position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:2.5px solid rgba(78,48,10,0.72);border-radius:12px;overflow:hidden;box-shadow:0 3px 10px rgba(0,0,0,0.22);">
+          <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(22,10,1,0.12) 0%,rgba(14,6,0,0.42) 48%,rgba(8,3,0,0.88) 100%);pointer-events:none;"></div>
+          <div style="position:absolute;inset:6px;border:1px solid rgba(215,170,72,0.22);border-radius:9px;pointer-events:none;"></div>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+            <div style="font-size:42px;color:rgba(255,228,165,0.10);line-height:1;">🏪</div>
+          </div>
+          <div style="position:absolute;top:0;left:0;right:0;padding:10px 46px 14px 12px;background:linear-gradient(180deg,rgba(16,6,0,0.82) 0%,transparent 100%);">
+            <div style="font-family:'Cinzel',serif;font-size:12px;color:rgba(255,234,175,0.97);letter-spacing:0.04em;text-shadow:0 1px 6px rgba(0,0,0,0.88);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n}</div>
+            <div style="font-family:'Crimson Text',serif;font-style:italic;font-size:9px;color:rgba(228,194,128,0.82);margin-top:2px;text-shadow:0 1px 4px rgba(0,0,0,0.7);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d}</div>
+          </div>
+          <div style="position:absolute;top:10px;right:10px;text-align:center;">
+            <div style="font-family:'Cinzel',serif;font-size:15px;color:rgba(255,245,220,0.92);line-height:1;text-shadow:0 1px 4px rgba(0,0,0,0.85);">${c}</div>
+            <div style="font-family:'Cinzel',serif;font-size:5.5px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(240,228,190,0.70);margin-top:2px;text-shadow:0 1px 2px rgba(0,0,0,0.7);">campaigns</div>
+          </div>
+          <div style="position:absolute;bottom:0;left:0;right:0;padding:8px 12px 11px;background:linear-gradient(0deg,rgba(8,3,0,0.92) 0%,rgba(8,3,0,0.72) 70%,transparent 100%);pointer-events:none;">
+            <div style="font-family:'Cinzel',serif;font-size:6.5px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(215,170,72,0.52);margin-bottom:3px;">${items.length} items</div>
+          </div>
+        </div>
+        <!-- BACK -->
+        <div style="position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateY(180deg);border:2.5px solid rgba(78,48,10,0.72);border-radius:12px;overflow:hidden;background:linear-gradient(148deg,#2a1a08,#1a0f04);box-shadow:0 3px 10px rgba(0,0,0,0.22);display:flex;flex-direction:column;padding:16px 16px 14px;box-sizing:border-box;">
+          <div style="position:absolute;inset:6px;border:1px solid rgba(215,170,72,0.22);border-radius:9px;pointer-events:none;"></div>
+          <div style="font-family:'Cinzel',serif;font-size:8.5px;color:rgba(255,228,165,0.90);letter-spacing:0.05em;text-shadow:0 1px 5px rgba(0,0,0,0.9);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:3px;">${n}</div>
+          <div style="font-family:'Cinzel',serif;font-size:6px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(215,170,72,0.45);margin-bottom:5px;">Inventory</div>
+          <div style="border-top:0.5px solid rgba(215,170,72,0.22);margin-bottom:6px;"></div>
+          <div data-scroll-back="1" style="flex:1;min-height:0;display:flex;flex-direction:column;gap:0;margin-bottom:8px;overflow-y:hidden;">
+            ${items.map((item,i) => '<div style="padding:4px 0;border-bottom:0.5px solid rgba(215,170,72,0.10);' + (i===items.length-1?'border-bottom:none;':'') + '"><div style="font-family:\'Crimson Text\',serif;font-size:9px;color:rgba(228,200,148,0.88);line-height:1.3;">' + item + '</div></div>').join('')}
+          </div>
+          <div onclick="event.stopPropagation()" style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.08em;color:rgba(255,200,200,0.90);background:rgba(120,25,25,0.65);border:1px solid rgba(180,50,50,0.40);border-radius:4px;padding:4px 0;text-align:center;cursor:pointer;flex-shrink:0;">✕ Delete</div>
+        </div>
+      </div>
+    </div>`).join('')}
+    </div>
+  </div>
+  <div style="margin-top:8px;flex-shrink:0;">
+    <div style="font-family:'Cinzel',serif;font-size:7.5px;letter-spacing:0.14em;color:rgba(105,72,18,0.55);text-transform:uppercase;">1–7 of 7</div>
+  </div>
+  <div class="fold"></div>`
+},
+
+
+/* 18 · SHOP ADD / EDIT ─────────────────── */
+{ label: 'XVIII · Create Location',
+  html: `
+  <div class="pnum">xviii · location — add / edit</div>
+
+  <!-- Nav bar -->
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-shrink:0;">
+    <div onclick="goTo(12)" style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.12em;color:rgba(105,72,18,0.72);text-transform:uppercase;border:1px dashed rgba(110,75,22,0.32);padding:2px 8px;border-radius:2px;cursor:pointer;">← Library</div>
+    <div style="flex:1;border-bottom:0.5px solid rgba(110,75,22,0.14);"></div>
+    <div onclick="saveShop()" style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.12em;color:rgba(38,88,42,0.85);text-transform:uppercase;border:1px dashed rgba(38,88,42,0.45);background:rgba(38,88,42,0.05);padding:2px 12px;border-radius:2px;cursor:pointer;">✓ Save Location</div>
+  </div>
+
+  <div class="scroll-body">
+
+    <!-- Image + Name block -->
+    <div style="display:flex;gap:10px;margin-bottom:8px;">
+      <div class="npc-img" style="flex-shrink:0;"><div class="npc-img-lbl">Location<br>Image</div></div>
+      <div style="flex:1;min-width:0;">
+        <label class="fi-label">Location Name *</label>
+        <div style="display:flex;align-items:center;gap:5px;margin-bottom:8px;">
+          <div title="Random Location Name Generator" style="font-size:13px;border:1px dashed rgba(110,75,22,0.32);border-radius:2px;padding:1px 5px;cursor:pointer;flex-shrink:0;line-height:1.6;">🎲</div>
+          <input class="fi" placeholder="Location's full name" style="flex:1;margin-bottom:0;">
+        </div>
+        <div style="display:flex;gap:6px;">
+          <div style="flex:1;">
+            <label class="fi-label">Location Type</label>
+            <select class="fi" style="font-style:normal;margin-bottom:0;cursor:pointer;">
+              <option value="">Select…</option>
+              <option>Blacksmith</option>
+              <option>Apothecary</option>
+              <option>Tavern</option>
+              <option>Bookshop</option>
+              <option>General Store</option>
+              <option>Cartographer</option>
+              <option>Jeweller</option>
+              <option>Tailor</option>
+              <option>Seafarer</option>
+              <option>Magic Shop</option>
+            </select>
+          </div>
+          <div style="flex:1;">
+            <label class="fi-label">Reputation</label>
+            <select class="fi" style="font-style:normal;margin-bottom:0;cursor:pointer;">
+              <option value="">Select…</option>
+              <option>Renowned</option>
+              <option>Trusted</option>
+              <option>Neutral</option>
+              <option>Suspicious</option>
+              <option>Shady</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Description -->
+    <label class="fi-label">Description</label>
+    <div class="wb tall" style="margin-bottom:12px;"><div class="wbd">Describe this location — its atmosphere, specialty, notable features…</div></div>
+
+    <!-- Inventory section -->
+    <div style="border:0.5px solid rgba(110,75,22,0.24);border-radius:4px;background:rgba(242,230,195,0.55);padding:9px 10px;margin-bottom:12px;">
+      <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:rgba(78,50,10,0.82);margin-bottom:8px;padding-bottom:5px;border-bottom:0.5px solid rgba(110,75,22,0.18);display:flex;align-items:baseline;gap:6px;">Inventory <span style="font-family:'Crimson Text',serif;font-style:italic;font-size:8px;letter-spacing:0;text-transform:none;color:rgba(105,72,18,0.45);">name &amp; price</span></div>
+      <div id="shop-items-list" style="margin-bottom:5px;">
+        <div class="shop-item-row" style="display:flex;align-items:center;gap:4px;margin-bottom:4px;">
+          <input class="fi" placeholder="Item name" style="flex:2;margin-bottom:0;">
+          <input class="fi" placeholder="Price" style="flex:1;margin-bottom:0;">
+          <div onclick="this.parentElement.remove()" style="font-family:'Cinzel',serif;font-size:14px;line-height:1;border:1px dashed rgba(140,48,28,0.38);border-radius:2px;padding:0px 5px;cursor:pointer;color:rgba(140,48,28,0.65);flex-shrink:0;">×</div>
+        </div>
+        <div class="shop-item-row" style="display:flex;align-items:center;gap:4px;margin-bottom:4px;">
+          <input class="fi" placeholder="Item name" style="flex:2;margin-bottom:0;">
+          <input class="fi" placeholder="Price" style="flex:1;margin-bottom:0;">
+          <div onclick="this.parentElement.remove()" style="font-family:'Cinzel',serif;font-size:14px;line-height:1;border:1px dashed rgba(140,48,28,0.38);border-radius:2px;padding:0px 5px;cursor:pointer;color:rgba(140,48,28,0.65);flex-shrink:0;">×</div>
+        </div>
+        <div class="shop-item-row" style="display:flex;align-items:center;gap:4px;margin-bottom:4px;">
+          <input class="fi" placeholder="Item name" style="flex:2;margin-bottom:0;">
+          <input class="fi" placeholder="Price" style="flex:1;margin-bottom:0;">
+          <div onclick="this.parentElement.remove()" style="font-family:'Cinzel',serif;font-size:14px;line-height:1;border:1px dashed rgba(140,48,28,0.38);border-radius:2px;padding:0px 5px;cursor:pointer;color:rgba(140,48,28,0.65);flex-shrink:0;">×</div>
+        </div>
+      </div>
+      <div onclick="addShopItem()" style="display:inline-flex;align-items:center;gap:4px;font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.06em;color:rgba(38,88,42,0.75);border:1px dashed rgba(38,88,42,0.42);border-radius:2px;padding:3px 8px;cursor:pointer;">+ Add Item</div>
+    </div>
+
+  </div>
+  <div class="fold"></div>`
+}
+
+,
+
+/* 21 · EDIT SHOP (Campaign) ─────────────── */
+{ label: 'XIX · Edit Location',
+  html: `
+  <div class="pnum">xix · edit location — campaign</div>
+
+  <!-- Nav bar -->
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-shrink:0;">
+    <div onclick="goTo(9)" style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.12em;color:rgba(105,72,18,0.72);text-transform:uppercase;border:1px dashed rgba(110,75,22,0.32);padding:2px 8px;border-radius:2px;cursor:pointer;">← NPCs</div>
+    <div style="font-family:'Crimson Text',serif;font-style:italic;font-size:10px;color:rgba(72,48,12,0.62);flex:1;text-align:center;">Irongate · The Shadow of Eldenmoor</div>
+  </div>
+
+  <div class="scroll-body">
+
+    <!-- Browse section header -->
+    <div style="font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(105,72,18,0.65);border-bottom:0.5px solid rgba(110,75,22,0.22);padding-bottom:4px;margin-bottom:8px;">Select a Location</div>
+    <div class="wb short" style="margin-bottom:10px;">
+      <div class="wbl">Search</div>
+      <div class="wbd">Name · Type…</div>
+    </div>
+
+    <!-- Card browser: stack (left) + main card (right) -->
+    <div style="display:flex;gap:40px;justify-content:center;align-items:flex-start;margin-bottom:10px;">
+
+      <!-- Shop card stack (left) -->
+      <div id="shop-browse-stack" onclick="swapShopCard()" class="pc-card" style="position:relative;cursor:pointer;">
+        <div style="position:absolute;top:8px;left:8px;right:-8px;bottom:-8px;background:rgba(192,144,96,0.50);border:2.5px solid rgba(88,56,12,0.26);border-radius:12px;transform:rotate(6deg);"></div>
+        <div style="position:absolute;top:4px;left:4px;right:-4px;bottom:-4px;background:rgba(210,168,110,0.65);border:2.5px solid rgba(88,56,12,0.34);border-radius:12px;transform:rotate(3deg);"></div>
+        <div style="position:absolute;inset:0;background:linear-gradient(148deg,rgba(220,185,130,0.92),rgba(192,144,96,0.88));border:2.5px solid rgba(82,52,10,0.62);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;box-shadow:inset 0 0 0 1.5px rgba(198,152,55,0.20);">
+          <div style="position:absolute;inset:7px;border:1px solid rgba(140,95,28,0.20);border-radius:9px;pointer-events:none;"></div>
+          <div style="font-size:34px;color:rgba(82,52,10,0.22);line-height:1;">🏪</div>
+          <div id="shop-browse-count" style="font-family:'Cinzel',serif;font-size:8px;color:rgba(72,48,12,0.52);letter-spacing:0.08em;text-align:center;line-height:1.8;">6 of 7<br>remaining</div>
+        </div>
+      </div>
+
+      <!-- Main shop card (right) -->
+      <div id="shop-main-card" class="pc-card pc-card-shop" style="position:relative;border:2.5px solid rgba(78,48,10,0.72);border-radius:12px;overflow:hidden;">
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(22,10,1,0.12) 0%,rgba(14,6,0,0.42) 48%,rgba(8,3,0,0.88) 100%);"></div>
+        <div style="position:absolute;inset:6px;border:1px solid rgba(215,170,72,0.22);border-radius:9px;pointer-events:none;"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+          <div style="font-size:42px;color:rgba(255,228,165,0.10);line-height:1;">🏪</div>
+        </div>
+        <div style="position:absolute;top:0;left:0;right:0;padding:10px 12px 14px;background:linear-gradient(180deg,rgba(16,6,0,0.82) 0%,transparent 100%);">
+          <div class="shop-cname" style="font-family:'Cinzel',serif;font-size:13px;color:rgba(255,234,175,0.97);letter-spacing:0.04em;text-shadow:0 1px 6px rgba(0,0,0,0.88);">The Iron Anvil</div>
+          <div class="shop-ctype" style="font-family:'Crimson Text',serif;font-style:italic;font-size:10px;color:rgba(228,194,128,0.82);margin-top:2px;text-shadow:0 1px 4px rgba(0,0,0,0.7);">Blacksmith · Irongate</div>
+        </div>
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:14px 12px 10px;background:linear-gradient(0deg,rgba(10,4,0,0.94) 0%,rgba(10,4,0,0.60) 70%,transparent 100%);">
+          <div class="shop-ccount" style="font-family:'Cinzel',serif;font-size:9px;color:rgba(215,170,72,0.52);letter-spacing:0.1em;">9 items</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Select button — aligned under main (right) card -->
+    <div style="display:flex;gap:40px;justify-content:center;margin-top:10px;margin-bottom:14px;">
+      <div style="width:180px;flex-shrink:0;"></div>
+      <div style="width:180px;display:flex;justify-content:center;">
+        <div onclick="selectShop()" style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(34,80,38,0.94);background:rgba(38,88,42,0.08);border:2px solid rgba(38,88,42,0.52);border-radius:7px;padding:8px 24px;cursor:pointer;display:inline-flex;flex-direction:column;align-items:center;gap:4px;box-shadow:0 2px 5px rgba(38,88,42,0.10);">
+          Select Location <span style="font-size:44px;line-height:1;color:rgba(34,80,38,0.80);">&#11015;</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Selected shop -->
+    <div class="dv"></div>
+    <div style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(105,72,18,0.62);margin-bottom:7px;" id="shop-sel-label">Selected Location — <span id="shop-sel-count">none</span></div>
+    <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:8px;">
+      <div id="shop-selected-card" style="flex-shrink:0;"></div>
+      <div id="shop-items-panel" style="flex:1;min-width:0;"></div>
+    </div>
+
+    <div style="height:32px;flex-shrink:0;"></div>
+
+  </div>
+  <div class="fold"></div>`
+}
+
+,
+
+/* 15 · CAMPAIGN DETAIL ─────────────────── */
+{ label: 'XV · Campaign Detail',
+  html: `
+  <div class="pnum">xv · campaign detail</div>
+
+  <!-- Header bar -->
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-shrink:0;">
+    <div onclick="goTo(7)" style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.12em;color:rgba(105,72,18,0.72);text-transform:uppercase;border:1px dashed rgba(110,75,22,0.32);padding:2px 8px;border-radius:2px;cursor:pointer;">← Library</div>
+  </div>
+
+  <!-- Campaign title + buttons -->
+  <div style="text-align:center;margin-bottom:6px;flex-shrink:0;">
+    <div style="font-family:'Cinzel',serif;font-size:16px;color:rgba(42,24,4,0.92);letter-spacing:0.06em;margin-bottom:8px;">${_cdData.campaign}</div>
+    <div style="display:inline-flex;flex-direction:column;align-items:center;gap:5px;">
+      <div onclick="goTo(11,1)" style="display:inline-flex;align-items:center;gap:5px;font-family:'Cinzel',serif;font-size:7.5px;letter-spacing:0.10em;text-transform:uppercase;color:rgba(48,78,130,0.82);border:1px solid rgba(48,78,130,0.38);border-radius:3px;padding:3px 10px;cursor:pointer;background:rgba(48,78,130,0.06);width:100%;justify-content:center;">&#10138; Invite Players</div>
+      <div onclick="goTo(10,1)" style="display:inline-flex;align-items:center;gap:5px;font-family:'Cinzel',serif;font-size:7.5px;letter-spacing:0.10em;text-transform:uppercase;color:rgba(130,95,18,0.82);border:1px solid rgba(130,95,18,0.38);border-radius:3px;padding:3px 10px;cursor:pointer;background:rgba(130,95,18,0.06);width:100%;justify-content:center;">&#9775; Gold Inventory</div>
+    </div>
+  </div>
+  <div class="dv" style="margin-bottom:8px;flex-shrink:0;"></div>
+
+  <!-- City cards — flat floated container -->
+  <div class="scroll-body">
+    <div style="display:flex;flex-wrap:wrap;gap:12px;padding:2px 0 12px;justify-content:flex-start;">${_cdData.cities.map((city, cityIdx) =>
+      '<div onclick="_cdActiveCityIdx=' + cityIdx + ';goTo(17,1)" class="pc-card pc-card-city" style="cursor:pointer;border:2.5px solid rgba(78,48,10,0.72);border-radius:12px;overflow:hidden;box-shadow:0 3px 10px rgba(0,0,0,0.22);position:relative;flex-shrink:0;">'
+        + '<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(22,10,1,0.12) 0%,rgba(14,6,0,0.42) 48%,rgba(8,3,0,0.88) 100%);pointer-events:none;"></div>'
+        + '<div style="position:absolute;inset:6px;border:1px solid rgba(215,170,72,0.22);border-radius:9px;pointer-events:none;"></div>'
+        + '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;"><div style="font-size:36px;color:rgba(255,228,165,0.10);line-height:1;">&#127984;</div></div>'
+        + '<div style="position:absolute;top:0;left:0;right:0;padding:10px 46px 14px 12px;background:linear-gradient(180deg,rgba(16,6,0,0.82) 0%,transparent 100%);">'
+          + '<div style="font-family:\'Cinzel\',serif;font-size:12px;color:rgba(255,234,175,0.97);letter-spacing:0.04em;text-shadow:0 1px 6px rgba(0,0,0,0.88);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + city.n + '</div>'
+          + '<div style="font-family:\'Crimson Text\',serif;font-style:italic;font-size:9px;color:rgba(228,194,128,0.82);margin-top:2px;text-shadow:0 1px 4px rgba(0,0,0,0.7);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + city.d + '</div>'
+        + '</div>'
+        + '<div style="position:absolute;top:10px;right:10px;text-align:center;">'
+          + '<div style="font-family:\'Cinzel\',serif;font-size:15px;color:rgba(255,245,220,0.92);line-height:1;text-shadow:0 1px 4px rgba(0,0,0,0.85);">' + city.npcs.length + '</div>'
+          + '<div style="font-family:\'Cinzel\',serif;font-size:5.5px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(240,228,190,0.70);margin-top:2px;text-shadow:0 1px 2px rgba(0,0,0,0.7);">npcs</div>'
+        + '</div>'
+        + '<div style="position:absolute;bottom:0;left:0;right:0;padding:10px 12px 11px;background:linear-gradient(0deg,rgba(8,3,0,0.92) 0%,rgba(8,3,0,0.72) 70%,transparent 100%);pointer-events:none;">'
+          + '<div style="font-family:\'Crimson Text\',serif;font-style:italic;font-size:8.5px;color:rgba(228,200,148,0.88);line-height:1.45;text-shadow:0 1px 4px rgba(0,0,0,0.9);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;">' + city.desc + '</div>'
+        + '</div>'
+      + '</div>'
+    ).join('')}</div>
+  </div>
+
+  <div class="fold"></div>`
+}
+
+,
+
+/* 16 · NPC DETAIL ───────────────────────── */
+{ label: 'XVI · NPC Detail',
+  html: `
+  <div class="pnum">xvi · npc detail</div>
+
+  <!-- Header bar -->
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-shrink:0;">
+    <div id="npc-detail-back" onclick="goTo(_npcDetailBackPage,-1)" style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.12em;color:rgba(105,72,18,0.72);text-transform:uppercase;border:1px dashed rgba(110,75,22,0.32);padding:2px 8px;border-radius:2px;cursor:pointer;">← Campaign</div>
+    <div id="cd-detail-city" style="font-family:'Crimson Text',serif;font-style:italic;font-size:10px;color:rgba(72,48,12,0.62);flex:1;text-align:center;">—</div>
+  </div>
+
+  <!-- Portrait card (centred, flippable) -->
+  <div style="display:flex;justify-content:center;margin-bottom:10px;flex-shrink:0;">
+    <div onclick="_fc(this)" class="pc-card" style="perspective:700px;cursor:pointer;">
+      <div class="lib-card-inner" style="position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform 0.52s cubic-bezier(0.4,0,0.2,1);">
+        <div id="cd-detail-front" class="pc-card-npc" style="position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:2.5px solid rgba(78,48,10,0.72);border-radius:12px;overflow:hidden;box-shadow:0 3px 10px rgba(0,0,0,0.22);"></div>
+        <div id="cd-detail-back"  style="position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateY(180deg);border:2.5px solid rgba(78,48,10,0.72);border-radius:12px;overflow:hidden;background:linear-gradient(148deg,#2a1a08,#1a0f04);box-shadow:0 3px 10px rgba(0,0,0,0.22);display:flex;flex-direction:column;padding:14px 15px 12px;box-sizing:border-box;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scrollable detail sections (populated by JS) -->
+  <div class="scroll-body">
+    <div id="cd-detail-content"></div>
+  </div>
+  <div class="fold"></div>`
+}
+
+,
+
+/* 17 · CITY DETAIL (Campaign) ──────────── */
+{ label: 'XX · City Detail',
+  html: `
+  <div class="pnum">xx · city detail</div>
+
+  <!-- Header bar -->
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-shrink:0;">
+    <div onclick="goTo(15,-1)" style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.12em;color:rgba(105,72,18,0.72);text-transform:uppercase;border:1px dashed rgba(110,75,22,0.32);padding:2px 8px;border-radius:2px;cursor:pointer;">← Campaign</div>
+    <div id="ccd-city-name" style="font-family:'Crimson Text',serif;font-style:italic;font-size:10px;color:rgba(72,48,12,0.62);flex:1;text-align:center;">—</div>
+    <div id="ccd-lock-btn" onclick="_ccdToggleCityLock()" style="cursor:pointer;font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.08em;padding:3px 8px;border-radius:3px;white-space:nowrap;"></div>
+  </div>
+
+  <!-- City card (centred) -->
+  <div style="display:flex;justify-content:center;margin-bottom:10px;flex-shrink:0;">
+    <div id="ccd-city-card" class="pc-card pc-card-city" style="border:2.5px solid rgba(78,48,10,0.72);border-radius:12px;overflow:hidden;box-shadow:0 3px 10px rgba(0,0,0,0.22);position:relative;"></div>
+  </div>
+
+  <div class="scroll-body">
+    <div id="ccd-content"></div>
+  </div>
+  <div class="fold"></div>`
+}
+
+]; // end pages
+
+
+/* ══════════════════════════════════════════
+   SPINE RINGS
+══════════════════════════════════════════ */
+(function buildSpine() {
+  const container = document.getElementById('spine-rings');
+  const count = 9;
+  for (let i = 0; i < count; i++) {
+    const r = document.createElement('div');
+    r.className = 'spine-ring';
+    container.appendChild(r);
+  }
+})();
+
+
+/* ══════════════════════════════════════════
+   STATE & DOM REFS
+══════════════════════════════════════════ */
+let cur = 0, busy = false;
+const pageFront    = document.getElementById('page-front');
+const pageBack     = document.getElementById('page-back');
+const frontContent = document.getElementById('front-content');
+const backContent  = document.getElementById('back-content');
+const pageFlip     = document.getElementById('page-flip');
+const flipFace     = document.getElementById('flip-face-content');
+const flipBackFace = document.getElementById('flip-back-content');
+const btnPrev      = document.getElementById('btn-prev');
+const btnNext      = document.getElementById('btn-next');
+const indicator    = document.getElementById('indicator');
+
+
+/* ══════════════════════════════════════════
+   RENDER
+══════════════════════════════════════════ */
+function attachScrollSync() {
+  const fcSbs = [...frontContent.querySelectorAll('.scroll-body')];
+  const ffSbs = [...flipFace.querySelectorAll('.scroll-body')];
+  fcSbs.forEach((sb, i) => {
+    if (ffSbs[i]) sb.addEventListener('scroll', () => { ffSbs[i].scrollTop = sb.scrollTop; });
+  });
+}
+/* ── SELECTED CARD STATE (pages 8 & 9) ── */
+const SEL_PEEK = 46;   /* px of card header peeking above the card on top of it */
+const SEL_FULL = 250;  /* px full card height — matches main card height          */
+
+const citySelected = [
+  { name: 'Irongate',  type: 'Major Port City',     desc: 'A bustling port city at the mouth of the Iron River — known for its iron trade, crowded docks, and uneasy politics.',
+    condition: 'Stable', geo: 'Coastal delta, iron-rich lowlands', climate: 'Temperate, frequent sea mists',
+    religion: 'Temple of Kord', vibe: 'Industrious, tense undertow', languages: "Common, Thieves' Cant",
+    secrets: ['The iron mines beneath the city are nearly exhausted — the guilds are hiding this from the public.'] },
+  { name: 'Eldenmoor', type: 'Elven Forest Village', desc: 'An ancient elven settlement in the depths of the Thornwood, where even sunlight struggles to reach the forest floor.',
+    condition: 'Thriving', geo: 'Ancient forest, highland mists', climate: 'Cool, perpetual leaf-filtered light',
+    religion: 'Circle of the Moon', vibe: 'Ancient, watchful, wary', languages: 'Elvish, Druidic',
+    secrets: ['The elder council has been deadlocked for three decades over a hidden crime.'] },
+];
+let cityExpandedIdx = 0;
+
+const npcSelected = [
+  { name: 'Mira Ashveil', role: 'Blacksmith · Human', desc: 'A no-nonsense smith who knows every guard\'s name and patrol route. Her loyalty has a price; her silence a higher one.',
+    secrets: ['She secretly fences stolen goods from the lower docks.'], settlingLocation: 'Ironhold' },
+  { name: 'Lord Vane',    role: 'Nobleman · Elf',     desc: 'An elven lord with three centuries in the city. He has outlasted every council and prefers it that way.',
+    secrets: ['Has been feeding information to a rival city-state for years.'] },
+];
+let npcExpandedIdx = 0;
+
+function render() {
+  frontContent.innerHTML = pages[cur].html;
+  pageFlip.style.transition = 'none';
+  pageFlip.style.transform  = 'rotateY(0deg)';
+  flipFace.innerHTML = pages[cur].html;
+  indicator.textContent = pages[cur].label;
+  if (btnPrev) btnPrev.disabled = cur === 0;
+  if (btnNext) btnNext.disabled = cur === pages.length - 1;
+  attachScrollSync();
+  postRender();
+}
+render();
+
+
+/* ══════════════════════════════════════════
+   SINGLE FLIP — one page step, any duration
+══════════════════════════════════════════ */
+function flipOnce(dir, ms, onDone, nxtOverride) {
+  const nxt = nxtOverride !== undefined ? nxtOverride : cur + dir;
+  if (nxt < 0 || nxt >= pages.length) { if (onDone) onDone(); return; }
+
+  const half = ms / 2;
+
+  if (dir === 1) {
+    /* Forward: current page sweeps left, next revealed beneath */
+    flipFace.innerHTML     = pages[cur].html;
+    flipBackFace.innerHTML = '';
+    backContent.innerHTML  = pages[nxt].html;
+
+    pageFlip.style.transition = 'none';
+    pageFlip.style.transform  = 'rotateY(0deg)';
+    pageFlip.style.transformOrigin = 'left center';
+    void pageFlip.offsetWidth;
+
+    pageFlip.style.transition = `transform ${ms}ms cubic-bezier(0.55,0.06,0.45,0.94)`;
+    pageFlip.style.transform  = 'rotateY(-180deg)';
+
+    setTimeout(() => { frontContent.innerHTML = pages[nxt].html; }, half);
+    setTimeout(() => {
+      cur = nxt;
+      flipFace.innerHTML = pages[cur].html;
+      pageFlip.style.transition = 'none';
+      pageFlip.style.transform  = 'rotateY(0deg)';
+      indicator.textContent = pages[cur].label;
+      attachScrollSync();
+      postRender();
+      if (onDone) onDone();
+    }, ms + 20);
+
+  } else {
+    /* Backward: previous page sweeps in from left */
+    flipFace.innerHTML     = pages[nxt].html;
+    flipBackFace.innerHTML = '';
+    backContent.innerHTML  = pages[nxt].html;
+
+    pageFlip.style.transition = 'none';
+    pageFlip.style.transform  = 'rotateY(-180deg)';
+    pageFlip.style.transformOrigin = 'left center';
+    void pageFlip.offsetWidth;
+
+    pageFlip.style.transition = `transform ${ms}ms cubic-bezier(0.55,0.06,0.45,0.94)`;
+    pageFlip.style.transform  = 'rotateY(0deg)';
+
+    setTimeout(() => { frontContent.innerHTML = pages[nxt].html; }, half);
+    setTimeout(() => {
+      cur = nxt;
+      flipFace.innerHTML = pages[cur].html;
+      pageFlip.style.transition = 'none';
+      pageFlip.style.transform  = 'rotateY(0deg)';
+      indicator.textContent = pages[cur].label;
+      attachScrollSync();
+      postRender();
+      if (onDone) onDone();
+    }, ms + 20);
+  }
+}
+
+
+/* ══════════════════════════════════════════
+   FLIP LIBRARY CARD — toggle front/back
+══════════════════════════════════════════ */
+function _fc(w) {
+  // Build index path from the layer root down to w
+  var path = [];
+  var el = w;
+  var layerRoot = null;
+  var tmp = w;
+  while (tmp) {
+    if (tmp === flipFace || tmp === frontContent) { layerRoot = tmp; break; }
+    tmp = tmp.parentElement;
+  }
+  if (!layerRoot) return;
+  el = w;
+  while (el && el !== layerRoot) {
+    path.unshift(Array.from(el.parentElement.children).indexOf(el));
+    el = el.parentElement;
+  }
+  var flipped = null;
+  [flipFace, frontContent].forEach(function(layer) {
+    if (!layer) return;
+    var target = layer;
+    for (var j = 0; j < path.length; j++) {
+      target = target.children[path[j]];
+      if (!target) return;
+    }
+    var i = target.querySelector('.lib-card-inner');
+    if (!i) return;
+    if (flipped === null) flipped = i.style.transform === 'rotateY(180deg)';
+    i.style.transform = flipped ? 'rotateY(0deg)' : 'rotateY(180deg)';
+    var s = i.querySelector('[data-scroll-back]');
+    if (s) s.style.overflowY = flipped ? 'hidden' : 'auto';
+  });
+}
+
+function _npcCardClick(e, card) {
+  var container = card.parentElement;
+  var cityIdx = parseInt(container.getAttribute('data-npc-row'));
+  if (container.getAttribute('data-stacked') === '1') {
+    _toggleNpcStack(cityIdx);
+  } else {
+    _fc(card);
+  }
+}
+
+function _carouselPrev(cityIdx) { _carouselShift(cityIdx, -1); }
+function _carouselNext(cityIdx) { _carouselShift(cityIdx,  1); }
+function _carouselShift(cityIdx, dir) {
+  var CARD_W = 168; // 160px card + 8px gap
+  [flipFace, frontContent].forEach(function(layer) {
+    if (!layer) return;
+    var track = layer.querySelector('[data-carousel-track="' + cityIdx + '"]');
+    if (!track) return;
+    var N = track.children.length;
+    var maxOffset = Math.max(0, (N - 1) * CARD_W);
+    var cur = parseInt(track.getAttribute('data-carousel-offset') || '0');
+    var next = Math.max(0, Math.min(maxOffset, cur + dir * CARD_W));
+    track.setAttribute('data-carousel-offset', next);
+    track.style.transform = 'translateX(-' + next + 'px)';
+  });
+}
+
+function _toggleNpcStack(cityIdx) {
+  [flipFace, frontContent].forEach(function(layer) {
+    if (!layer) return;
+    var container = layer.querySelector('[data-npc-row="' + cityIdx + '"]');
+    if (!container) return;
+    var btn = layer.querySelector('[data-expand-btn="' + cityIdx + '"]');
+    var cards = Array.from(container.querySelectorAll('[data-npc-card]'));
+    var N = cards.length;
+    var isStacked = container.getAttribute('data-stacked') === '1';
+    if (isStacked) {
+      container.setAttribute('data-stacked', '0');
+      container.style.height = (N * 258 - 6) + 'px';
+      if (btn) btn.textContent = '▲';
+      cards.forEach(function(card, i) {
+        card.style.top = (i * 258) + 'px';
+        card.style.left = '0px';
+        card.style.zIndex = i;
+      });
+    } else {
+      container.setAttribute('data-stacked', '1');
+      container.style.height = (252 + (N - 1) * 3) + 'px';
+      if (btn) btn.textContent = '▼';
+      cards.forEach(function(card, i) {
+        card.style.top = (i * 3) + 'px';
+        card.style.left = (i * 3) + 'px';
+        card.style.zIndex = N - i;
+      });
+    }
+  });
+}
+
+/* ══════════════════════════════════════════
+   CAMPAIGN DETAIL — pages 15 & 16
+══════════════════════════════════════════ */
+
+function _cdPostRender() {
+  /* No carousel — nothing to initialise */
+}
+
+function _cdScrollToCol(idx) {
+  idx = Math.max(0, Math.min(_cdData.cities.length - 1, idx));
+  _cdActiveCityIdx = idx;
+  _cdUpdateDots(idx);
+  [flipFace, frontContent].forEach(function(layer) {
+    if (!layer) return;
+    var track = layer.querySelector('#cd-col-track');
+    if (!track) return;
+    Array.from(track.children).forEach(function(col, i) {
+      col.style.transform = 'translateX(' + ((i - idx) * 100) + '%)';
+      col.style.opacity   = i === idx ? '1' : '0.5';
+    });
+  });
+}
+
+function _cdUpdateDots(idx) {
+  [flipFace, frontContent].forEach(function(layer) {
+    if (!layer) return;
+    _cdData.cities.forEach(function(_, i) {
+      var dot = layer.querySelector('#cd-dot-' + i);
+      if (!dot) return;
+      dot.style.width    = i === idx ? '16px' : '6px';
+      dot.style.background = 'rgba(105,72,18,' + (i === idx ? '0.65' : '0.22') + ')';
+    });
+  });
+}
+
+function _cdUpdateNpcList(cityIdx) {
+  var html = _cdNpcListHtml(cityIdx);
+  [flipFace, frontContent].forEach(function(layer) {
+    if (!layer) return;
+    var list = layer.querySelector('#cd-npc-list');
+    if (list) list.innerHTML = html;
+    var nameEl = layer.querySelector('#cd-city-name');
+    if (nameEl) nameEl.textContent = _cdData.cities[cityIdx].n;
+  });
+}
+
+function _cdNpcListHtml(cityIdx) {
+  var city = _cdData.cities[cityIdx];
+  if (!city || !city.npcs.length) {
+    return '<div style="font-family:\'Crimson Text\',serif;font-style:italic;font-size:10px;color:rgba(105,72,18,0.42);padding:8px 0;">No NPCs in this city yet.</div>';
+  }
+  return city.npcs.map(function(npc, npcIdx) {
+    var badges = '';
+    if (npc.secrets && npc.secrets.length) {
+      badges += '<div style="font-family:\'Cinzel\',serif;font-size:6px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(180,100,30,0.85);background:rgba(180,100,30,0.10);border:1px solid rgba(180,100,30,0.32);border-radius:3px;padding:2px 6px;white-space:nowrap;">&#128274; ' + npc.secrets.length + '</div>';
+    }
+    if (npc.shop) {
+      badges += '<div style="font-family:\'Cinzel\',serif;font-size:6px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(40,140,60,0.85);background:rgba(40,140,60,0.10);border:1px solid rgba(40,140,60,0.32);border-radius:3px;padding:2px 6px;white-space:nowrap;">&#128722; Location</div>';
+    }
+    return '<div onclick="_cdGotoNpc(' + cityIdx + ',' + npcIdx + ')" style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:linear-gradient(148deg,rgba(200,165,106,0.14),rgba(158,116,56,0.08));border:1.5px solid rgba(78,48,10,0.22);border-radius:8px;margin-bottom:7px;cursor:pointer;">'
+      + '<div style="width:38px;height:52px;flex-shrink:0;border-radius:6px;background:linear-gradient(148deg,#b89a58,#8a6428);border:1.5px solid rgba(78,48,10,0.45);display:flex;align-items:center;justify-content:center;">'
+        + '<div style="font-family:\'Cinzel\',serif;font-size:14px;color:rgba(255,234,175,0.80);">' + npc.n.charAt(0) + '</div>'
+      + '</div>'
+      + '<div style="flex:1;min-width:0;">'
+        + '<div style="font-family:\'Cinzel\',serif;font-size:10px;color:rgba(72,44,10,0.92);letter-spacing:0.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + npc.n + '</div>'
+        + '<div style="font-family:\'Crimson Text\',serif;font-style:italic;font-size:8.5px;color:rgba(105,72,18,0.70);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + npc.d + '</div>'
+        + (badges ? '<div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;">' + badges + '</div>' : '')
+      + '</div>'
+      + '<div style="font-family:\'Cinzel\',serif;font-size:14px;color:rgba(105,72,18,0.45);flex-shrink:0;">&#8250;</div>'
+      + '</div>';
+  }).join('');
+}
+
+function _cdGotoNpc(cityIdx, npcIdx, fromPage) {
+  _cdActiveCityIdx   = cityIdx;
+  _cdActiveNpcRef    = { cityIdx: cityIdx, npcIdx: npcIdx };
+  _npcDetailBackPage = (fromPage !== undefined) ? fromPage : 15;
+  goTo(16);
+}
+
+function _cdNpcDetailRender() {
+  var cityIdx = _cdActiveNpcRef.cityIdx;
+  var npcIdx  = _cdActiveNpcRef.npcIdx;
+  var city    = _cdData.cities[cityIdx];
+  var npc     = city.npcs[npcIdx];
+
+  var frontHtml = ''
+    + '<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(22,10,1,0.12) 0%,rgba(14,6,0,0.42) 48%,rgba(8,3,0,0.88) 100%);pointer-events:none;"></div>'
+    + '<div style="position:absolute;inset:5px;border:1px solid rgba(215,170,72,0.22);border-radius:9px;pointer-events:none;"></div>'
+    + '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;"><div style="font-size:48px;color:rgba(255,228,165,0.08);">&#128100;</div></div>'
+    + '<div style="position:absolute;top:0;left:0;right:0;padding:10px 12px 12px;">'
+      + '<div style="font-family:\'Cinzel\',serif;font-size:12px;color:rgba(255,234,175,0.97);letter-spacing:0.04em;text-shadow:0 1px 6px rgba(0,0,0,0.88);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + npc.n + '</div>'
+      + '<div style="font-family:\'Crimson Text\',serif;font-style:italic;font-size:8.5px;color:rgba(228,194,128,0.82);margin-top:2px;text-shadow:0 1px 4px rgba(0,0,0,0.7);">' + npc.d + '</div>'
+    + '</div>'
+    + '<div style="position:absolute;bottom:0;left:0;right:0;padding:8px 10px 10px;background:linear-gradient(0deg,rgba(8,3,0,0.92) 0%,rgba(8,3,0,0.60) 70%,transparent 100%);pointer-events:none;">'
+      + '<div style="font-family:\'Crimson Text\',serif;font-style:italic;font-size:7.5px;color:rgba(228,200,148,0.88);line-height:1.4;text-shadow:0 1px 4px rgba(0,0,0,0.9);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">' + (npc.desc || '') + '</div>'
+    + '</div>';
+
+  var backHtml = ''
+    + '<div style="position:absolute;inset:5px;border:1px solid rgba(215,170,72,0.22);border-radius:9px;pointer-events:none;"></div>'
+    + '<div style="font-family:\'Cinzel\',serif;font-size:8px;color:rgba(255,228,165,0.90);letter-spacing:0.05em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:5px;">' + npc.n + '</div>'
+    + '<div style="border-top:0.5px solid rgba(215,170,72,0.22);margin-bottom:6px;"></div>'
+    + '<div style="flex:1;display:flex;flex-direction:column;gap:5px;overflow:hidden;">'
+    + _cdStatRowBack('Pronouns', npc.pronouns)
+    + _cdStatRowBack('Race', npc.race)
+    + _cdStatRowBack('Role', npc.role)
+    + _cdStatRowBack('Age', npc.age)
+    + _cdStatRowBack('Alignment', npc.align)
+    + _cdStatRowBack('Posture', npc.posture)
+    + _cdStatRowBack('Speed', npc.speed)
+    + _cdStatRowBack('Voice', npc.voice)
+    + '</div>';
+
+  var detailHtml = _cdDetailContentHtml(cityIdx, npcIdx);
+
+  var backLabel = _npcDetailBackPage === 17 ? '← City' : '← Campaign';
+  [flipFace, frontContent].forEach(function(layer) {
+    if (!layer) return;
+    var backBtn = layer.querySelector('#npc-detail-back');
+    if (backBtn) backBtn.textContent = backLabel;
+    var cityEl = layer.querySelector('#cd-detail-city');
+    if (cityEl) cityEl.textContent = city.n + ' · ' + npc.n;
+    var frontEl = layer.querySelector('#cd-detail-front');
+    if (frontEl) frontEl.innerHTML = frontHtml;
+    var backEl = layer.querySelector('#cd-detail-back');
+    if (backEl) backEl.innerHTML = backHtml;
+    var contentEl = layer.querySelector('#cd-detail-content');
+    if (contentEl) contentEl.innerHTML = detailHtml;
+  });
+}
+
+function _cdStatRowBack(label, value) {
+  if (!value) return '';
+  return '<div><div style="font-family:\'Cinzel\',serif;font-size:4.5px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(215,170,72,0.52);">' + label + '</div>'
+    + '<div style="font-family:\'Crimson Text\',serif;font-size:7.5px;color:rgba(228,200,148,0.88);line-height:1.2;">' + value + '</div></div>';
+}
+
+function _cdDetailContentHtml(cityIdx, npcIdx) {
+  var city = _cdData.cities[cityIdx];
+  var npc  = city.npcs[npcIdx];
+  var html = '';
+
+  html += '<div style="margin-bottom:14px;">'
+    + '<div style="font-family:\'Cinzel\',serif;font-size:7px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(105,72,18,0.50);margin-bottom:6px;padding-bottom:4px;border-bottom:0.5px solid rgba(105,72,18,0.18);">Details</div>'
+    + _cdDetailStatRow('Pronouns', npc.pronouns)
+    + _cdDetailStatRow('Race', npc.race)
+    + _cdDetailStatRow('Role', npc.role)
+    + _cdDetailStatRow('Age', npc.age)
+    + _cdDetailStatRow('Alignment', npc.align)
+    + _cdDetailStatRow('Posture', npc.posture)
+    + _cdDetailStatRow('Speed', npc.speed)
+    + _cdDetailStatRow('Voice', npc.voice)
+    + '</div>';
+
+  if (npc.secrets && npc.secrets.length) {
+    html += '<div style="margin-bottom:14px;">'
+      + '<div style="font-family:\'Cinzel\',serif;font-size:7px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(180,100,30,0.60);margin-bottom:6px;padding-bottom:4px;border-bottom:0.5px solid rgba(180,100,30,0.22);">&#128274; Secrets</div>';
+    npc.secrets.forEach(function(secret, sIdx) {
+      var revealed = !!_cdRevealedSecrets[cityIdx + ':' + npcIdx + ':' + sIdx];
+      html += '<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 8px;background:rgba(180,100,30,0.06);border:1px solid rgba(180,100,30,0.18);border-radius:6px;margin-bottom:6px;">'
+        + '<div style="flex:1;font-family:\'Crimson Text\',serif;font-size:8.5px;line-height:1.45;color:rgba(72,44,10,' + (revealed ? '0.88' : '0.0') + ');' + (revealed ? '' : 'filter:blur(4px);user-select:none;') + '">' + secret + '</div>'
+        + (revealed
+          ? '<div style="font-family:\'Cinzel\',serif;font-size:6px;letter-spacing:0.08em;color:rgba(105,72,18,0.45);padding-top:2px;flex-shrink:0;">Revealed</div>'
+          : '<div onclick="_cdReveal(' + cityIdx + ',' + npcIdx + ',' + sIdx + ')" style="font-family:\'Cinzel\',serif;font-size:6px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(180,100,30,0.85);background:rgba(180,100,30,0.10);border:1px solid rgba(180,100,30,0.40);border-radius:3px;padding:2px 7px;cursor:pointer;flex-shrink:0;white-space:nowrap;">Reveal</div>')
+        + '</div>';
+    });
+    html += '</div>';
+  }
+
+  if (npc.shop && npc.shop.length) {
+    html += '<div style="margin-bottom:14px;">'
+      + '<div style="font-family:\'Cinzel\',serif;font-size:7px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(40,140,60,0.60);margin-bottom:6px;padding-bottom:4px;border-bottom:0.5px solid rgba(40,140,60,0.22);">&#128722; Location Inventory</div>';
+    npc.shop.forEach(function(item) {
+      html += '<div style="display:flex;align-items:center;gap:6px;padding:6px 8px;border-bottom:0.5px solid rgba(105,72,18,0.12);">'
+        + '<div style="flex:1;">'
+          + '<div style="font-family:\'Cinzel\',serif;font-size:9px;color:rgba(72,44,10,0.88);letter-spacing:0.02em;">' + item.name + '</div>'
+          + (item.desc ? '<div style="font-family:\'Crimson Text\',serif;font-style:italic;font-size:7.5px;color:rgba(105,72,18,0.62);margin-top:1px;">' + item.desc + '</div>' : '')
+        + '</div>'
+        + '<div style="font-family:\'Cinzel\',serif;font-size:8px;color:rgba(40,140,60,0.80);white-space:nowrap;flex-shrink:0;">' + item.price + '</div>'
+        + '</div>';
+    });
+    html += '</div>';
+  }
+
+  return html;
+}
+
+function _cdDetailStatRow(label, value) {
+  if (!value) return '';
+  return '<div style="display:flex;gap:6px;padding:3px 0;border-bottom:0.5px solid rgba(105,72,18,0.08);">'
+    + '<div style="font-family:\'Cinzel\',serif;font-size:7px;letter-spacing:0.06em;text-transform:uppercase;color:rgba(105,72,18,0.50);width:64px;flex-shrink:0;padding-top:1px;">' + label + '</div>'
+    + '<div style="font-family:\'Crimson Text\',serif;font-size:9px;color:rgba(72,44,10,0.88);line-height:1.3;">' + value + '</div>'
+    + '</div>';
+}
+
+function _cdReveal(cityIdx, npcIdx, secretIdx) {
+  _cdRevealedSecrets[cityIdx + ':' + npcIdx + ':' + secretIdx] = true;
+  var html = _cdDetailContentHtml(cityIdx, npcIdx);
+  [flipFace, frontContent].forEach(function(layer) {
+    if (!layer) return;
+    var el = layer.querySelector('#cd-detail-content');
+    if (el) el.innerHTML = html;
+  });
+}
+
+/* ── CITY DETAIL PAGE (page 17) ── */
+function _cdCityDetailRender() {
+  var city = _cdData.cities[_cdActiveCityIdx];
+  if (!city) return;
+  var ci = _cdActiveCityIdx;
+
+  /* init lock defaults */
+  if (_ccdCityLocked[ci] === undefined) _ccdCityLocked[ci] = true;
+  city.secrets.forEach(function(_, si) {
+    var k = ci + ':' + si;
+    if (_ccdSecretLocked[k]   === undefined) _ccdSecretLocked[k]   = true;
+    if (_ccdSecretExpanded[k] === undefined) _ccdSecretExpanded[k] = false;
+  });
+
+  var cityLocked  = _ccdCityLocked[ci];
+  var lockBtnBase = 'cursor:pointer;font-family:\'Cinzel\',serif;font-size:7px;letter-spacing:0.08em;padding:3px 8px;border-radius:3px;white-space:nowrap;';
+  var lockBtnStyle = cityLocked
+    ? lockBtnBase + 'color:rgba(180,60,20,0.85);background:rgba(180,60,20,0.09);border:1px solid rgba(180,60,20,0.32);'
+    : lockBtnBase + 'color:rgba(34,110,50,0.85);background:rgba(34,110,50,0.09);border:1px solid rgba(34,110,50,0.32);';
+  var lockBtnText = cityLocked ? '🔒 Locked' : '🔓 Unlocked';
+
+  /* ── content html ── */
+  var html = '';
+
+  /* description */
+  html += '<div style="font-family:\'Crimson Text\',serif;font-style:italic;font-size:10px;color:rgba(72,44,10,0.82);line-height:1.55;margin-bottom:12px;padding-bottom:10px;border-bottom:0.5px solid rgba(105,72,18,0.18);">' + city.desc + '</div>';
+
+  /* stat rows */
+  var fields = [
+    ['Size',         city.size],
+    ['Condition',    city.cond],
+    ['Geography',    city.geo],
+    ['Architecture', city.arch],
+    ['Climate',      city.climate],
+    ['Religion',     city.religion],
+    ['Vibe',         city.vibe],
+    ['Languages',    city.langs]
+  ];
+  html += '<div style="margin-bottom:14px;">';
+  fields.forEach(function(f) { if (f[1]) html += _cdDetailStatRow(f[0], f[1]); });
+  html += '</div>';
+
+  /* secrets */
+  if (city.secrets.length) {
+    html += '<div style="border-top:0.5px solid rgba(180,100,30,0.28);padding-top:10px;">';
+    html += '<div style="font-family:\'Cinzel\',serif;font-size:7px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(180,100,30,0.65);margin-bottom:8px;">&#128274; Secrets</div>';
+    city.secrets.forEach(function(secret, si) {
+      var k = ci + ':' + si;
+      var sLocked   = _ccdSecretLocked[k];
+      var expanded  = _ccdSecretExpanded[k];
+      var lockBase  = 'cursor:pointer;font-family:\'Cinzel\',serif;font-size:9px;padding:2px 6px;border-radius:3px;flex-shrink:0;line-height:1.5;';
+      var lockStyle = sLocked
+        ? lockBase + 'color:rgba(180,60,20,0.80);background:rgba(180,60,20,0.08);border:1px solid rgba(180,60,20,0.28);'
+        : lockBase + 'color:rgba(34,110,50,0.80);background:rgba(34,110,50,0.08);border:1px solid rgba(34,110,50,0.28);';
+      var textStyle = expanded
+        ? 'white-space:normal;overflow:visible;'
+        : 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+      html += '<div style="display:flex;align-items:flex-start;gap:6px;padding:7px 8px;background:rgba(180,100,30,0.05);border:1px solid rgba(180,100,30,0.16);border-radius:5px;margin-bottom:6px;">'
+        + '<div onclick="_ccdToggleSecretLock(' + si + ')" style="' + lockStyle + '">' + (sLocked ? '🔒' : '🔓') + '</div>'
+        + '<div onclick="_ccdToggleSecretExpand(' + si + ')" style="flex:1;font-family:\'Crimson Text\',serif;font-size:9px;line-height:1.5;color:rgba(72,44,10,0.88);cursor:pointer;' + textStyle + '">' + secret + '</div>'
+        + '</div>';
+    });
+    html += '</div>';
+  } else {
+    html += '<div style="font-family:\'Crimson Text\',serif;font-style:italic;font-size:10px;color:rgba(105,72,18,0.42);padding:8px 0;">No secrets recorded for this city.</div>';
+  }
+
+  /* ── NPCs ── */
+  if (city.npcs && city.npcs.length) {
+    html += '<div style="border-top:0.5px solid rgba(120,80,22,0.28);padding-top:10px;margin-top:10px;">';
+    html += '<div style="font-family:\'Cinzel\',serif;font-size:7px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(120,80,22,0.70);margin-bottom:8px;">NPCs</div>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:8px;">';
+    city.npcs.forEach(function(npc, ni) {
+      html += '<div onclick="_cdGotoNpc(' + ci + ',' + ni + ',17)" class="pc-card pc-card-npc" style="cursor:pointer;border:2.5px solid rgba(78,48,10,0.72);border-radius:12px;overflow:hidden;box-shadow:0 3px 10px rgba(0,0,0,0.22);position:relative;">'
+        + '<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(22,10,1,0.12) 0%,rgba(14,6,0,0.42) 48%,rgba(8,3,0,0.88) 100%);pointer-events:none;"></div>'
+        + '<div style="position:absolute;inset:6px;border:1px solid rgba(215,170,72,0.22);border-radius:9px;pointer-events:none;"></div>'
+        + '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;"><div style="font-family:\'Cinzel\',serif;font-size:38px;color:rgba(255,234,175,0.12);">' + npc.n.charAt(0) + '</div></div>'
+        + '<div style="position:absolute;top:0;left:0;right:0;padding:10px 12px 14px;background:linear-gradient(180deg,rgba(16,6,0,0.82) 0%,transparent 100%);">'
+          + '<div style="font-family:\'Cinzel\',serif;font-size:11px;color:rgba(255,234,175,0.97);letter-spacing:0.04em;text-shadow:0 1px 6px rgba(0,0,0,0.88);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + npc.n + '</div>'
+          + '<div style="font-family:\'Crimson Text\',serif;font-style:italic;font-size:8.5px;color:rgba(228,194,128,0.82);margin-top:2px;text-shadow:0 1px 4px rgba(0,0,0,0.7);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + npc.d + '</div>'
+        + '</div>'
+        + '<div style="position:absolute;bottom:0;left:0;right:0;padding:10px 12px 11px;background:linear-gradient(0deg,rgba(8,3,0,0.92) 0%,rgba(8,3,0,0.72) 70%,transparent 100%);pointer-events:none;">'
+          + '<div style="font-family:\'Crimson Text\',serif;font-style:italic;font-size:8px;color:rgba(228,200,148,0.80);line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">' + npc.desc + '</div>'
+        + '</div>'
+        + '</div>';
+    });
+    html += '</div></div>';
+  }
+
+  var cardHtml = '<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(22,10,1,0.12) 0%,rgba(14,6,0,0.42) 48%,rgba(8,3,0,0.88) 100%);pointer-events:none;"></div>'
+    + '<div style="position:absolute;inset:6px;border:1px solid rgba(215,170,72,0.22);border-radius:9px;pointer-events:none;"></div>'
+    + '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;"><div style="font-size:36px;color:rgba(255,228,165,0.10);line-height:1;">&#127984;</div></div>'
+    + '<div style="position:absolute;top:0;left:0;right:0;padding:10px 46px 14px 12px;background:linear-gradient(180deg,rgba(16,6,0,0.82) 0%,transparent 100%);">'
+      + '<div style="font-family:\'Cinzel\',serif;font-size:12px;color:rgba(255,234,175,0.97);letter-spacing:0.04em;text-shadow:0 1px 6px rgba(0,0,0,0.88);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + city.n + '</div>'
+      + '<div style="font-family:\'Crimson Text\',serif;font-style:italic;font-size:9px;color:rgba(228,194,128,0.82);margin-top:2px;text-shadow:0 1px 4px rgba(0,0,0,0.7);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + city.d + '</div>'
+    + '</div>'
+    + '<div style="position:absolute;top:10px;right:10px;text-align:center;">'
+      + '<div style="font-family:\'Cinzel\',serif;font-size:15px;color:rgba(255,245,220,0.92);line-height:1;text-shadow:0 1px 4px rgba(0,0,0,0.85);">' + city.npcs.length + '</div>'
+      + '<div style="font-family:\'Cinzel\',serif;font-size:5.5px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(240,228,190,0.70);margin-top:2px;text-shadow:0 1px 2px rgba(0,0,0,0.7);">npcs</div>'
+    + '</div>'
+    + '<div style="position:absolute;bottom:0;left:0;right:0;padding:10px 12px 11px;background:linear-gradient(0deg,rgba(8,3,0,0.92) 0%,rgba(8,3,0,0.72) 70%,transparent 100%);pointer-events:none;">'
+      + '<div style="font-family:\'Crimson Text\',serif;font-style:italic;font-size:8.5px;color:rgba(228,200,148,0.88);line-height:1.45;text-shadow:0 1px 4px rgba(0,0,0,0.9);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;">' + city.desc + '</div>'
+    + '</div>';
+
+  [flipFace, frontContent].forEach(function(layer) {
+    if (!layer) return;
+    var nameEl = layer.querySelector('#ccd-city-name');
+    if (nameEl) nameEl.textContent = city.n;
+    var lockBtn = layer.querySelector('#ccd-lock-btn');
+    if (lockBtn) { lockBtn.setAttribute('style', lockBtnStyle); lockBtn.textContent = lockBtnText; }
+    var cityCard = layer.querySelector('#ccd-city-card');
+    if (cityCard) cityCard.innerHTML = cardHtml;
+    var content = layer.querySelector('#ccd-content');
+    if (content) content.innerHTML = html;
+  });
+}
+
+function _ccdToggleCityLock() {
+  _ccdCityLocked[_cdActiveCityIdx] = !_ccdCityLocked[_cdActiveCityIdx];
+  _cdCityDetailRender();
+}
+
+function _ccdToggleSecretLock(si) {
+  var k = _cdActiveCityIdx + ':' + si;
+  _ccdSecretLocked[k] = !_ccdSecretLocked[k];
+  _cdCityDetailRender();
+}
+
+function _ccdToggleSecretExpand(si) {
+  var k = _cdActiveCityIdx + ':' + si;
+  _ccdSecretExpanded[k] = !_ccdSecretExpanded[k];
+  _cdCityDetailRender();
+}
+
+function flipLibCard(wrapper) {
+  const idx = Array.from(wrapper.parentElement.children).indexOf(wrapper);
+  const flipped = wrapper.querySelector('.lib-card-inner')?.style.transform === 'rotateY(180deg)';
+  const next = flipped ? 'rotateY(0deg)' : 'rotateY(180deg)';
+  [flipFace, frontContent].forEach(layer => {
+    if (!layer) return;
+    const firstInner = layer.querySelector('.lib-card-inner');
+    if (!firstInner) return;
+    const grid = firstInner.closest('[style*="flex-wrap"]');
+    if (!grid) return;
+    const inner = grid.children[idx]?.querySelector('.lib-card-inner');
+    if (inner) {
+      inner.style.transform = next;
+      const scrollBack = inner.querySelector('[data-scroll-back]');
+      if (scrollBack) scrollBack.style.overflowY = flipped ? 'hidden' : 'auto';
+    }
+  });
+}
+
+/*══════════════════════════════════════════
+   GO TO PAGE — single flip to any target
+══════════════════════════════════════════ */
+function goTo(target, forceDir) {
+  if (busy) return;
+  target = Math.max(0, Math.min(pages.length - 1, target));
+  if (target === cur) return;
+
+  busy = true;
+  const dir = forceDir !== undefined ? forceDir : (target > cur ? 1 : -1);
+  flipOnce(dir, 720, () => { busy = false; }, target);
+}
+
+
+/* ══════════════════════════════════════════
+   TURN — relative ±1 (buttons / kbd / swipe)
+══════════════════════════════════════════ */
+function turn(dir) {
+  goTo(cur + dir);
+}
+
+
+/* ══════════════════════════════════════════
+   NPC FORM — dynamic secret rows
+══════════════════════════════════════════ */
+function makeDelBtn() {
+  const d = document.createElement('div');
+  d.setAttribute('onclick', 'delSecretRow(this)');
+  d.setAttribute('style', 'font-family:\'Cinzel\',serif;font-size:14px;line-height:1;border:1px dashed rgba(140,48,28,0.38);border-radius:2px;padding:0px 5px;cursor:pointer;color:rgba(140,48,28,0.65);flex-shrink:0;');
+  d.textContent = '×';
+  return d;
+}
+function addSecretRow(btn) {
+  const row = btn.closest('.secret-row');
+  const allFcRows = [...document.getElementById('front-content').querySelectorAll('.secret-row')];
+  const idx = allFcRows.indexOf(row);
+
+  const clone = row.cloneNode(true);
+  clone.querySelector('input').value = '';
+  if (!clone.querySelector('[onclick^="delSecretRow"]')) clone.appendChild(makeDelBtn());
+  row.insertAdjacentElement('afterend', clone);
+  clone.querySelector('input').focus();
+
+  // Mirror into the visible flip-face layer
+  if (idx !== -1) {
+    const ffRows = [...document.getElementById('flip-face-content').querySelectorAll('.secret-row')];
+    if (ffRows[idx]) {
+      const ffClone = ffRows[idx].cloneNode(true);
+      ffClone.querySelector('input').value = '';
+      if (!ffClone.querySelector('[onclick^="delSecretRow"]')) ffClone.appendChild(makeDelBtn());
+      ffRows[idx].insertAdjacentElement('afterend', ffClone);
+    }
+  }
+}
+function delSecretRow(btn) {
+  const row = btn.closest('.secret-row');
+  const container = row.parentNode;
+  if (container.querySelectorAll('.secret-row').length <= 1) return;
+
+  const allFcRows = [...document.getElementById('front-content').querySelectorAll('.secret-row')];
+  const idx = allFcRows.indexOf(row);
+  row.remove();
+
+  // Mirror into the visible flip-face layer
+  if (idx !== -1) {
+    const ffRows = [...document.getElementById('flip-face-content').querySelectorAll('.secret-row')];
+    if (ffRows[idx] && ffRows[idx].parentNode.querySelectorAll('.secret-row').length > 1) {
+      ffRows[idx].remove();
+    }
+  }
+}
+function addCitySecret() {
+  const city = citySelected[cityExpandedIdx];
+  if (!city) return;
+  if (!city.secrets) city.secrets = [];
+  city.secrets.push('');
+  renderCityDetailPanel();
+  openSecretModal('city', city.secrets.length - 1);
+}
+function saveNpc() {
+  alert('NPC saved successfully!');
+  goTo(3);
+}
+function saveCity() {
+  alert('City saved successfully!');
+  goTo(5);
+}
+function addShopItem() {
+  const container = document.getElementById('shop-items-list');
+  if (!container) return;
+  const row = document.createElement('div');
+  row.className = 'shop-item-row';
+  row.style.cssText = 'display:flex;align-items:center;gap:4px;margin-bottom:4px;';
+  row.innerHTML = '<input class="fi" placeholder="Item name" style="flex:2;margin-bottom:0;"><input class="fi" placeholder="Price" style="flex:1;margin-bottom:0;"><div onclick="this.parentElement.remove()" style="font-family:\'Cinzel\',serif;font-size:14px;line-height:1;border:1px dashed rgba(140,48,28,0.38);border-radius:2px;padding:0px 5px;cursor:pointer;color:rgba(140,48,28,0.65);flex-shrink:0;">×</div>';
+  container.appendChild(row);
+  row.querySelector('input').focus();
+}
+function saveShop() {
+  alert('Shop saved successfully!');
+  goTo(12);
+}
+
+
+/* ══════════════════════════════════════════
+   CARD SWAP — pages 8 & 9
+══════════════════════════════════════════ */
+const cityCardsData = [
+  { name: 'Silverkeep',  type: 'Mountain Stronghold',  desc: 'A fortified city carved into the northern peaks, known for its dwarven architecture and iron-clad militia.' },
+  { name: 'Thornhaven',  type: 'Elven Forest Village', desc: 'A hidden enclave deep in the Thornwood — the elves here guard ancient secrets and distrust outsiders fiercely.' },
+  { name: 'Port Ashden', type: 'Coastal Trading Hub',  desc: 'A windswept port where merchants and pirates share the same tavern, and coin speaks louder than law.' },
+  { name: 'Velmoor',     type: 'Desert Fortress',      desc: 'A sun-bleached stronghold rising from the Ashen Wastes — its inhabitants are hard, proud, and slow to trust.' },
+];
+let cityCardIdx  = 0;
+let citySwapping = false;
+
+const npcCardsData = [
+  { name: 'Captain Rael',   role: 'Guard Captain · Human · Lawful Good',         desc: 'A grizzled veteran who keeps the peace in Irongate\'s lower docks. Known for bending the rules when coin is involved.' },
+  { name: 'Mirabel Crane',  role: 'Tavern Keeper · Halfling · Neutral Good',      desc: 'Loud, warm, and sharper than she looks — Mirabel knows every rumour in the Copper Quarter before noon.' },
+  { name: 'Lord Varek',     role: 'City Councilor · Human · Lawful Neutral',      desc: 'A silver-tongued politician who has served three councils. His loyalty is to whoever is currently winning.' },
+  { name: 'Sera Ashveil',   role: 'Fence & Informant · Half-Elf · Chaotic Neutral', desc: 'Operates out of the Tanner\'s District. Everything she sells has a previous owner who doesn\'t know it\'s gone.' },
+  { name: 'Brother Aldric', role: 'Temple Priest · Dwarf · Lawful Good',          desc: 'Tends the Temple of Kord with quiet devotion. Carries guilt over a deed from his youth he has never confessed.' },
+];
+let npcCardIdx  = 0;
+let npcSwapping = false;
+
+const shopCardsData = [
+  { name:'The Iron Anvil',    type:'Blacksmith · Irongate',   count:9,  items:['Longsword · 15 gp','Shortsword · 10 gp','Handaxe · 5 gp','Dagger · 2 gp','Warhammer · 15 gp','Iron Shield · 12 gp','Chain Mail · 75 gp','Scale Mail · 50 gp','Spear · 1 gp'] },
+  { name:'The Gilded Goblet', type:'Tavern · Eldenmoor',       count:7,  items:['Ale · 4 cp','Wine · 2 sp','Mead · 5 cp','Hearty Stew · 1 sp','Hot Bread · 2 cp','Room & Board · 5 sp','Strong Spirits · 1 sp'] },
+  { name:"Witch's Wares",     type:'Apothecary · Thornhaven', count:6,  items:['Healing Potion · 50 gp','Antitoxin · 50 gp','Holy Water · 25 gp','Alchemist\'s Fire · 50 gp','Acid Vial · 25 gp','Poison Vial · 100 gp'] },
+  { name:'The Shadowed Tome', type:'Bookshop · Irongate',      count:7,  items:['Spellbook (blank) · 50 gp','Scroll of Identify · 50 gp','Arcane Focus · 20 gp','Ink (1 oz) · 10 gp','Parchment · 1 sp','Quill · 1 cp','Research Notes · 2 gp'] },
+  { name:"Rael's Outfitters", type:'General · Irongate',       count:8,  items:['Rope (50 ft) · 1 gp','Torch · 1 cp','Rations (1 day) · 5 sp','Backpack · 2 gp','Waterskin · 2 sp','Tinderbox · 5 sp','Blanket · 5 sp','Lantern · 5 gp'] },
+  { name:'The Jade Compass',  type:'Cartographer · Eldenmoor', count:5,  items:['Local Map · 5 gp','Regional Map · 20 gp','Blank Parchment · 1 sp','Compass · 10 gp','Surveying Notes · 3 gp'] },
+  { name:"Fenn's Dockside",   type:'Seafarer · Irongate',      count:6,  items:['Fishing Net · 1 gp','Hemp Rope · 1 gp','Lantern · 5 gp','Rowboat Hire · 2 gp','Signal Whistle · 5 cp','Sailor\'s Garb · 1 gp'] },
+];
+let shopBrowseIdx = 0;
+let shopSwapping  = false;
+let selectedShopData = null;
+
+function _pulseStack(stackId) {
+  /* Pulse in both layers */
+  [flipFace, frontContent].forEach(layer => {
+    if (!layer) return;
+    const el = layer.querySelector('[id="' + stackId + '"]');
+    if (!el) return;
+    el.style.animation = 'none';
+    void el.offsetWidth;
+    el.style.animation = 'stackPulse 0.32s ease-out';
+  });
+}
+
+function _updateCardFields(layer, selectors) {
+  if (!layer) return;
+  Object.entries(selectors).forEach(([cls, text]) => {
+    const el = layer.querySelector('.' + cls);
+    if (el) el.textContent = text;
+  });
+}
+
+function _updateCount(layer, countId, rem, total) {
+  if (!layer) return;
+  const el = layer.querySelector('[id="' + countId + '"]');
+  if (el) el.innerHTML = rem + ' of ' + total + '<br>remaining';
+}
+
+function swapCityCard() {
+  if (citySwapping) return;
+  /* Always animate the visible flip-face layer; mirror text to front-content */
+  const card = flipFace ? flipFace.querySelector('[id="city-main-card"]') : null;
+  if (!card) return;
+  citySwapping = true;
+
+  _pulseStack('city-card-stack');
+
+  /* Phase 1 — slide current card out toward the stack */
+  card.style.transition = 'transform 0.27s cubic-bezier(0.4,0,1,1), opacity 0.22s ease-in';
+  card.style.transform  = 'translateX(-224px) scale(0.82) rotate(-6deg)';
+  card.style.opacity    = '0';
+
+  setTimeout(() => {
+    cityCardIdx = (cityCardIdx + 1) % cityCardsData.length;
+    const d   = cityCardsData[cityCardIdx];
+    const rem = cityCardsData.length - cityCardIdx - 1;
+    const fields = { 'city-cname': d.name, 'city-ctype': d.type, 'city-cdesc': d.desc };
+
+    _updateCardFields(flipFace,    fields);
+    _updateCardFields(frontContent, fields);
+    _updateCount(flipFace,    'city-stack-count', rem, cityCardsData.length);
+    _updateCount(frontContent, 'city-stack-count', rem, cityCardsData.length);
+
+    /* Phase 2 — snap to stack origin then slide in */
+    card.style.transition = 'none';
+    card.style.transform  = 'translateX(-224px) scale(0.82) rotate(-6deg)';
+    card.style.opacity    = '0';
+    void card.offsetWidth;
+    card.style.transition = 'transform 0.30s cubic-bezier(0,0,0.2,1), opacity 0.25s ease-out';
+    card.style.transform  = 'translateX(0) scale(1) rotate(0deg)';
+    card.style.opacity    = '1';
+
+    setTimeout(() => { citySwapping = false; }, 300);
+  }, 270);
+}
+
+function swapNpcCard() {
+  if (npcSwapping) return;
+  const card = flipFace ? flipFace.querySelector('[id="npc-main-card"]') : null;
+  if (!card) return;
+  npcSwapping = true;
+
+  _pulseStack('npc-card-stack');
+
+  card.style.transition = 'transform 0.27s cubic-bezier(0.4,0,1,1), opacity 0.22s ease-in';
+  card.style.transform  = 'translateX(-224px) scale(0.82) rotate(-6deg)';
+  card.style.opacity    = '0';
+
+  setTimeout(() => {
+    npcCardIdx = (npcCardIdx + 1) % npcCardsData.length;
+    const d   = npcCardsData[npcCardIdx];
+    const rem = npcCardsData.length - npcCardIdx - 1;
+    const fields = { 'npc-cname': d.name, 'npc-crole': d.role, 'npc-cdesc': d.desc };
+
+    _updateCardFields(flipFace,    fields);
+    _updateCardFields(frontContent, fields);
+    _updateCount(flipFace,    'npc-stack-count', rem, npcCardsData.length);
+    _updateCount(frontContent, 'npc-stack-count', rem, npcCardsData.length);
+
+    card.style.transition = 'none';
+    card.style.transform  = 'translateX(-224px) scale(0.82) rotate(-6deg)';
+    card.style.opacity    = '0';
+    void card.offsetWidth;
+    card.style.transition = 'transform 0.30s cubic-bezier(0,0,0.2,1), opacity 0.25s ease-out';
+    card.style.transform  = 'translateX(0) scale(1) rotate(0deg)';
+    card.style.opacity    = '1';
+
+    setTimeout(() => { npcSwapping = false; }, 300);
+  }, 270);
+}
+
+function swapShopCard() {
+  if (shopSwapping) return;
+  const card = flipFace ? flipFace.querySelector('#shop-main-card') : null;
+  if (!card) return;
+  shopSwapping = true;
+  _pulseStack('shop-browse-stack');
+  card.style.transition = 'transform 0.27s cubic-bezier(0.4,0,1,1), opacity 0.22s ease-in';
+  card.style.transform  = 'translateX(-224px) scale(0.82) rotate(-6deg)';
+  card.style.opacity    = '0';
+  setTimeout(() => {
+    shopBrowseIdx = (shopBrowseIdx + 1) % shopCardsData.length;
+    const d   = shopCardsData[shopBrowseIdx];
+    const rem = shopCardsData.length - shopBrowseIdx - 1;
+    const fields = { 'shop-cname': d.name, 'shop-ctype': d.type, 'shop-ccount': d.count + ' items' };
+    _updateCardFields(flipFace,     fields);
+    _updateCardFields(frontContent, fields);
+    _updateCount(flipFace,     'shop-browse-count', rem, shopCardsData.length);
+    _updateCount(frontContent, 'shop-browse-count', rem, shopCardsData.length);
+    card.style.transition = 'none';
+    card.style.transform  = 'translateX(-224px) scale(0.82) rotate(-6deg)';
+    card.style.opacity    = '0';
+    void card.offsetWidth;
+    card.style.transition = 'transform 0.30s cubic-bezier(0,0,0.2,1), opacity 0.25s ease-out';
+    card.style.transform  = 'translateX(0) scale(1) rotate(0deg)';
+    card.style.opacity    = '1';
+    setTimeout(() => { shopSwapping = false; }, 300);
+  }, 270);
+}
+
+function selectShop() {
+  selectedShopData = shopCardsData[shopBrowseIdx];
+  [flipFace, frontContent].forEach(layer => {
+    if (!layer) return;
+    const lbl = layer.querySelector('#shop-sel-count');
+    if (lbl) lbl.textContent = selectedShopData.name;
+    _renderShopSelectedCard(layer);
+    _renderShopItemPanel(layer);
+  });
+}
+
+function _renderShopSelectedCard(layer) {
+  if (!layer) return;
+  const el = layer.querySelector('#shop-selected-card');
+  if (!el || !selectedShopData) { if(el) el.innerHTML = ''; return; }
+  const d = selectedShopData;
+  el.innerHTML = `<div style="width:120px;height:168px;position:relative;border:2px solid rgba(78,48,10,0.72);border-radius:9px;overflow:hidden;background:linear-gradient(148deg,#4765a7,#759bd7);flex-shrink:0;">
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(22,10,1,0.12) 0%,rgba(14,6,0,0.42) 48%,rgba(8,3,0,0.88) 100%);"></div>
+    <div style="position:absolute;inset:4px;border:1px solid rgba(215,170,72,0.18);border-radius:6px;pointer-events:none;"></div>
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;"><div style="font-size:28px;color:rgba(255,228,165,0.10);">🏪</div></div>
+    <div style="position:absolute;top:0;left:0;right:0;padding:7px 8px 10px;background:linear-gradient(180deg,rgba(16,6,0,0.82) 0%,transparent 100%);">
+      <div style="font-family:'Cinzel',serif;font-size:9px;color:rgba(255,234,175,0.97);letter-spacing:0.04em;text-shadow:0 1px 4px rgba(0,0,0,0.88);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.name}</div>
+      <div style="font-family:'Crimson Text',serif;font-style:italic;font-size:7.5px;color:rgba(228,194,128,0.82);margin-top:1px;text-shadow:0 1px 3px rgba(0,0,0,0.7);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.type}</div>
+    </div>
+    <div style="position:absolute;bottom:0;left:0;right:0;padding:6px 8px 7px;background:linear-gradient(0deg,rgba(10,4,0,0.92) 0%,rgba(10,4,0,0.60) 70%,transparent 100%);">
+      <div style="font-family:'Cinzel',serif;font-size:6px;color:rgba(215,170,72,0.52);letter-spacing:0.1em;">${d.count} items</div>
+    </div>
+    <div onclick="removeShop()" style="position:absolute;top:7px;right:7px;font-family:'Cinzel',serif;font-size:6.5px;letter-spacing:0.08em;text-transform:uppercase;color:#ffd8cc;border:1px solid rgba(210,70,45,0.75);background:rgba(110,20,8,0.92);padding:2px 6px;border-radius:3px;cursor:pointer;">&#215;</div>
+  </div>`;
+}
+
+function _renderShopItemPanel(layer) {
+  if (!layer) return;
+  const el = layer.querySelector('#shop-items-panel');
+  if (!el) return;
+  if (!selectedShopData) { el.innerHTML = '<div style="padding:16px 10px;font-family:\'Crimson Text\',serif;font-style:italic;font-size:10.5px;color:rgba(105,72,18,0.42);line-height:1.6;">Select a location above to view and customise its inventory.</div>'; return; }
+  const d = selectedShopData;
+  const itemRows = d.items.map(item =>
+    '<div style="padding:3px 0;border-bottom:0.5px solid rgba(110,75,22,0.12);"><span style="font-family:\'Crimson Text\',serif;font-size:9.5px;color:rgba(58,38,10,0.75);">' + item + '</span></div>'
+  ).join('');
+  el.innerHTML = `<div style="border:0.5px solid rgba(110,75,22,0.24);border-radius:4px;background:rgba(242,230,195,0.55);padding:9px 10px;">
+    <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:rgba(78,50,10,0.82);margin-bottom:6px;padding-bottom:4px;border-bottom:0.5px solid rgba(110,75,22,0.18);">${d.name}</div>
+    <label class="fi-label" style="margin-bottom:4px;">Standard Inventory</label>
+    <div style="margin-bottom:8px;">${itemRows}</div>
+    <div style="border-top:0.5px solid rgba(110,75,22,0.18);margin-bottom:6px;padding-top:6px;">
+      <label class="fi-label" style="margin-bottom:4px;">Campaign Custom Items</label>
+      <div id="campaign-shop-rows" style="margin-bottom:5px;"></div>
+      <div onclick="addCampaignShopItem()" style="display:inline-flex;align-items:center;gap:4px;font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.06em;color:rgba(38,88,42,0.75);border:1px dashed rgba(38,88,42,0.42);border-radius:2px;padding:3px 8px;cursor:pointer;">+ Add Item</div>
+    </div>
+  </div>`;
+}
+
+function addCampaignShopItem() {
+  [flipFace, frontContent].forEach(layer => {
+    if (!layer) return;
+    const container = layer.querySelector('#campaign-shop-rows');
+    if (!container) return;
+    const row = document.createElement('div');
+    row.className = 'shop-item-row';
+    row.style.cssText = 'display:flex;align-items:center;gap:4px;margin-bottom:4px;';
+    row.innerHTML = '<input class="fi" placeholder="Item name" style="flex:2;margin-bottom:0;"><input class="fi" placeholder="Price" style="flex:1;margin-bottom:0;"><div onclick="this.parentElement.remove()" style="font-family:\'Cinzel\',serif;font-size:14px;line-height:1;border:1px dashed rgba(140,48,28,0.38);border-radius:2px;padding:0px 5px;cursor:pointer;color:rgba(140,48,28,0.65);flex-shrink:0;">×</div>';
+    container.appendChild(row);
+    if (layer === frontContent) row.querySelector('input').focus();
+  });
+}
+
+function removeShop() {
+  const card = flipFace ? flipFace.querySelector('#shop-selected-card > div') : null;
+  if (card) {
+    _ghostSlideRemove(card, 'shop-browse-stack', () => {
+      selectedShopData = null;
+      [flipFace, frontContent].forEach(layer => {
+        _renderShopSelectedCard(layer);
+        _renderShopItemPanel(layer);
+      });
+      const rem = shopCardsData.length - shopBrowseIdx - 1;
+      _updateCount(flipFace,     'shop-browse-count', rem, shopCardsData.length);
+      _updateCount(frontContent, 'shop-browse-count', rem, shopCardsData.length);
+    });
+  } else {
+    selectedShopData = null;
+    [flipFace, frontContent].forEach(layer => {
+      _renderShopSelectedCard(layer);
+      _renderShopItemPanel(layer);
+    });
+  }
+}
+
+
+
+/* ══════════════════════════════════════════
+   SELECTED CARD STACK — pages 8 & 9
+   Cards are stacked like a physical deck:
+   card[0] peeks at the very top (z-index 1),
+   card[n-1] sits on top of everything (z-index n)
+   and is fully visible.  Clicking any card
+   slides the higher-z cards downward to fully
+   reveal the tapped card.
+══════════════════════════════════════════ */
+function postRender() {
+  if (cur === 8) renderCitySelStack();
+  if (cur === 9) renderNpcSelStack();
+  if (cur === 15) _cdPostRender();
+  if (cur === 16) _cdNpcDetailRender();
+  if (cur === 17) _cdCityDetailRender();
+  if (cur === 14) {
+    [flipFace, frontContent].forEach(layer => {
+      _renderShopSelectedCard(layer);
+      _renderShopItemPanel(layer);
+    });
+    const rem = shopCardsData.length - shopBrowseIdx - 1;
+    _updateCount(flipFace,     'shop-browse-count', rem, shopCardsData.length);
+    _updateCount(frontContent, 'shop-browse-count', rem, shopCardsData.length);
+  }
+}
+
+function _selTops(n, expIdx) {
+  /* top-offset (px) for each card given which index is expanded (-1 = none) */
+  return Array.from({ length: n }, (_, j) =>
+    j * SEL_PEEK + (expIdx !== -1 && j > expIdx ? SEL_FULL - SEL_PEEK : 0));
+}
+
+function _buildSelStack(items, expIdx, type) {
+  if (!items.length)
+    return '<div style="font-family:\'Crimson Text\',serif;font-style:italic;font-size:10px;color:rgba(105,72,18,0.42);padding:8px 0 4px;">None added yet.</div>';
+  const n   = items.length;
+  const isCt  = type === 'city';
+  const bg    = isCt ? '#b89a58,#8a6428' : '#e8cc98,#c49858';
+  const tfn   = isCt ? 'toggleCityCard'    : 'toggleNpcCard';
+  const rfn   = isCt ? 'removeCitySelected': 'removeNpcSelected';
+  const tops  = _selTops(n, expIdx);
+  const h     = tops[n - 1] + SEL_FULL;
+
+  const cards = items.map((item, i) => {
+    const sub   = isCt ? item.type : item.role;
+    const isExp = i === expIdx;
+    const detMaxH = (SEL_FULL - 50) + 'px';
+    const editBtn = isCt
+      ? '<div onclick="event.stopPropagation();goTo(9);" style="font-family:\'Cinzel\',serif;font-size:7px;letter-spacing:0.08em;text-transform:uppercase;color:#d8ffc8;border:1px solid rgba(80,180,45,0.85);background:rgba(24,88,12,0.96);padding:2px 8px;border-radius:3px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.35);">Edit &#8594;</div>'
+      : '';
+    return '<div data-sel-idx="' + i + '" onclick="' + tfn + '(' + i + ')"'
+      + ' style="position:absolute;top:' + tops[i] + 'px;left:0;width:140px;height:' + SEL_FULL + 'px;'
+      + 'background:linear-gradient(148deg,' + bg + ');'
+      + 'border:2.5px solid rgba(78,48,10,0.72);border-radius:10px;overflow:hidden;cursor:pointer;'
+      + 'z-index:' + (i + 1) + ';box-shadow:0 3px 14px rgba(0,0,0,0.30);'
+      + 'transition:top 0.34s cubic-bezier(0.25,0.46,0.45,0.94);">'
+        + '<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(22,10,1,0.12) 0%,rgba(14,6,0,0.42) 48%,rgba(8,3,0,0.88) 100%);pointer-events:none;"></div>'
+        + '<div style="position:absolute;inset:5px;border:1px solid rgba(215,170,72,0.18);border-radius:7px;pointer-events:none;"></div>'
+        + '<div style="position:absolute;top:0;left:0;right:0;padding:9px 12px 9px 14px;background:linear-gradient(180deg,rgba(16,6,0,0.88) 0%,transparent 100%);display:flex;align-items:flex-start;justify-content:space-between;gap:6px;">'
+          + '<div style="flex:1;min-width:0;overflow:hidden;">'
+            + '<div style="font-family:\'Cinzel\',serif;font-size:11px;color:rgba(255,234,175,0.97);letter-spacing:0.04em;text-shadow:0 1px 6px rgba(0,0,0,0.88);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + item.name + '</div>'
+            + '<div style="font-family:\'Crimson Text\',serif;font-style:italic;font-size:9px;color:rgba(228,194,128,0.82);margin-top:1px;text-shadow:0 1px 4px rgba(0,0,0,0.7);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + sub + '</div>'
+          + '</div>'
+          + '<div onclick="event.stopPropagation();' + rfn + '(' + i + ');" style="flex-shrink:0;font-family:\'Cinzel\',serif;font-size:6.5px;letter-spacing:0.08em;text-transform:uppercase;color:#ffd8cc;border:1px solid rgba(210,70,45,0.75);background:rgba(110,20,8,0.92);padding:2px 6px;border-radius:3px;cursor:pointer;margin-top:1px;">&#215;</div>'
+        + '</div>'
+        + '<div class="sel-detail" style="position:absolute;bottom:0;left:0;right:0;padding:8px 14px 8px;'
+          + 'background:linear-gradient(0deg,rgba(10,4,0,0.96) 0%,rgba(10,4,0,0.55) 70%,transparent 100%);'
+          + 'overflow:hidden;transition:opacity 0.22s ease,max-height 0.34s ease;'
+          + (isExp ? 'opacity:1;max-height:' + detMaxH + ';pointer-events:auto;' : 'opacity:0;max-height:0;pointer-events:none;') + '">'
+          + '<div style="font-family:\'Crimson Text\',serif;font-size:9px;color:rgba(228,200,145,0.88);line-height:1.45;">' + (item.desc || '') + '</div>'
+        + '</div>'
+      + '</div>';
+  }).join('');
+
+  return '<div style="position:relative;width:140px;height:' + h + 'px;">' + cards + '</div>';
+}
+
+function _writeSelStack(stackId, countId, items, expIdx, type) {
+  const html = _buildSelStack(items, expIdx, type);
+  [flipFace, frontContent].forEach(layer => {
+    if (!layer) return;
+    const el  = layer.querySelector('#' + stackId);
+    if (el)  el.innerHTML = html;
+    const cnt = layer.querySelector('#' + countId);
+    if (cnt) cnt.textContent = items.length;
+  });
+}
+
+function renderCitySelStack() { _writeSelStack('city-selected-stack', 'city-sel-count', citySelected, cityExpandedIdx, 'city'); renderCityDetailPanel(); }
+function renderNpcSelStack()  { _writeSelStack('npc-selected-stack',  'npc-sel-count',  npcSelected,  npcExpandedIdx,  'npc');  renderNpcSecretsPanel(); }
+
+/* ── CITY DETAIL PANEL (right of selected city stack on page 8) ── */
+function renderCityDetailPanel() {
+  const city = (cityExpandedIdx >= 0 && citySelected.length > 0) ? citySelected[cityExpandedIdx] : null;
+  let html;
+  if (!city) {
+    html = '<div style="padding:16px 10px;font-family:\'Crimson Text\',serif;font-style:italic;font-size:10.5px;color:rgba(105,72,18,0.42);line-height:1.6;">Tap a city card to view and edit its campaign details.</div>';
+  } else {
+    const opts = ['Thriving','Stable','Declining','War-Torn','Rebuilding','Abandoned']
+      .map(o => '<option' + (o === (city.condition || 'Stable') ? ' selected' : '') + '>' + o + '</option>').join('');
+    const secretRows = (city.secrets || []).map((s, i) =>
+      '<div class="secret-row" style="display:flex;align-items:center;gap:4px;margin-bottom:4px;">'
+      + '<div onclick="openSecretModal(\'city\',' + i + ')" class="fi" style="flex:1;margin-bottom:0;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' + (s ? 'color:rgba(52,32,6,0.82);' : 'color:rgba(105,72,18,0.40);font-style:italic;') + '">' + (s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : 'Click to add text…') + '</div>'
+      + '<div onclick="delCitySecret(' + i + ')" style="font-family:\'Cinzel\',serif;font-size:14px;line-height:1;border:1px dashed rgba(140,48,28,0.38);border-radius:2px;padding:0px 5px;cursor:pointer;color:rgba(140,48,28,0.65);flex-shrink:0;">×</div>'
+      + '</div>').join('');
+    html = `<div style="border:0.5px solid rgba(110,75,22,0.24);border-radius:4px;background:rgba(242,230,195,0.55);padding:9px 10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px;padding-bottom:5px;border-bottom:0.5px solid rgba(110,75,22,0.18);">
+        <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:rgba(78,50,10,0.82);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${city.name} <span style="font-family:'Crimson Text',serif;font-style:italic;font-size:8px;letter-spacing:0;text-transform:none;color:rgba(105,72,18,0.45);margin-left:4px;">campaign copy</span></div>
+        <div onclick="goTo(9)" style="flex-shrink:0;font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.08em;text-transform:uppercase;color:#d8ffc8;border:1px solid rgba(80,180,45,0.80);background:rgba(24,88,12,0.92);padding:4px 10px;border-radius:3px;cursor:pointer;">+ Add NPCs</div>
+      </div>
+      <div style="display:flex;gap:5px;margin-bottom:5px;">
+        <div style="flex:1;min-width:0;"><label class="fi-label">Condition</label><select class="fi" style="font-style:normal;margin-bottom:0;cursor:pointer;">${opts}</select></div>
+        <div style="flex:2;min-width:0;"><label class="fi-label">Geographic Location</label><input class="fi" style="margin-bottom:0;" value="${(city.geo||'').replace(/"/g,'&quot;')}"></div>
+      </div>
+      <div style="display:flex;gap:5px;margin-bottom:5px;">
+        <div style="flex:1;min-width:0;"><label class="fi-label">Climate &amp; Weather</label><input class="fi" style="margin-bottom:0;" value="${(city.climate||'').replace(/"/g,'&quot;')}"></div>
+        <div style="flex:1;min-width:0;"><label class="fi-label">Dominant Religion</label><input class="fi" style="margin-bottom:0;" value="${(city.religion||'').replace(/"/g,'&quot;')}"></div>
+      </div>
+      <div style="display:flex;gap:5px;margin-bottom:7px;">
+        <div style="flex:1;min-width:0;"><label class="fi-label">Overall Vibe</label><input class="fi" style="margin-bottom:0;" value="${(city.vibe||'').replace(/"/g,'&quot;')}"></div>
+        <div style="flex:1;min-width:0;"><label class="fi-label">Languages Spoken</label><input class="fi" style="margin-bottom:0;" value="${(city.languages||'').replace(/"/g,'&quot;')}"></div>
+      </div>
+      <label class="fi-label">🔒 City Secrets <span style="color:rgba(140,48,28,0.55);font-style:normal;">(hidden from players)</span></label>
+      <div id="city-secret-rows" style="margin-bottom:5px;">${secretRows}</div>
+      <div onclick="addCitySecret()" style="display:inline-flex;align-items:center;gap:4px;font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.06em;color:rgba(38,88,42,0.75);border:1px dashed rgba(38,88,42,0.42);border-radius:2px;padding:3px 8px;cursor:pointer;">+ Add Secret</div>
+    </div>`;
+  }
+  [flipFace, frontContent].forEach(layer => {
+    if (!layer) return;
+    const el = layer.querySelector('#city-detail-panel');
+    if (el) el.innerHTML = html;
+  });
+}
+
+/* ── NPC SECRETS PANEL (right of selected NPC stack on page 9) ── */
+function renderNpcSecretsPanel() {
+  const npc = (npcExpandedIdx >= 0 && npcSelected.length > 0) ? npcSelected[npcExpandedIdx] : null;
+  let html;
+  if (!npc) {
+    html = '<div style="padding:16px 10px;font-family:\'Crimson Text\',serif;font-style:italic;font-size:10.5px;color:rgba(105,72,18,0.42);line-height:1.6;">Tap an NPC card to view and edit their secrets.</div>';
+  } else {
+    const secretRows = (npc.secrets || []).map((s, i) =>
+      '<div class="secret-row" style="display:flex;align-items:center;gap:4px;margin-bottom:4px;">'
+      + '<div onclick="openSecretModal(\'npc\',' + i + ')" class="fi" style="flex:1;margin-bottom:0;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' + (s ? 'color:rgba(52,32,6,0.82);' : 'color:rgba(105,72,18,0.40);font-style:italic;') + '">' + (s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : 'Click to add text…') + '</div>'
+      + '<div onclick="delNpcSecret(' + i + ')" style="font-family:\'Cinzel\',serif;font-size:14px;line-height:1;border:1px dashed rgba(140,48,28,0.38);border-radius:2px;padding:0px 5px;cursor:pointer;color:rgba(140,48,28,0.65);flex-shrink:0;">×</div>'
+      + '</div>').join('');
+    const locRow = npc.settlingLocation
+      ? `<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px;padding-bottom:6px;border-bottom:0.5px solid rgba(110,75,22,0.18);">
+          <span style="font-family:'Cinzel',serif;font-size:7.5px;letter-spacing:0.10em;text-transform:uppercase;color:rgba(78,50,10,0.55);white-space:nowrap;">Settling Location</span>
+          <span style="font-family:'Crimson Text',serif;font-size:11px;color:rgba(52,32,6,0.82);">${npc.settlingLocation}</span>
+         </div>`
+      : '';
+    html = `<div style="border:0.5px solid rgba(110,75,22,0.24);border-radius:4px;background:rgba(242,230,195,0.55);padding:9px 10px;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-bottom:5px;border-bottom:0.5px solid rgba(110,75,22,0.18);">
+        <div style="flex:1;min-width:0;font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:rgba(78,50,10,0.82);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${npc.name} <span style="font-family:'Crimson Text',serif;font-style:italic;font-size:8px;letter-spacing:0;text-transform:none;color:rgba(105,72,18,0.45);margin-left:4px;">${npc.role}</span></div>
+        <button onclick="goTo(14)" style="font-family:'Cinzel',serif;font-size:7.5px;letter-spacing:0.08em;padding:3px 7px;border:1px solid rgba(110,75,22,0.4);border-radius:3px;background:rgba(200,165,106,0.18);color:rgba(52,32,6,0.72);cursor:pointer;white-space:nowrap;flex-shrink:0;">Settling Location</button>
+      </div>
+      ${locRow}<label class="fi-label">🔒 NPC Secrets <span style="color:rgba(140,48,28,0.55);font-style:normal;">(hidden from players)</span></label>
+      <div id="npc-secret-rows" style="margin-bottom:5px;">${secretRows}</div>
+      <div onclick="addNpcSecret()" style="display:inline-flex;align-items:center;gap:4px;font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.06em;color:rgba(38,88,42,0.75);border:1px dashed rgba(38,88,42,0.42);border-radius:2px;padding:3px 8px;cursor:pointer;">+ Add Secret</div>
+    </div>`;
+  }
+  [flipFace, frontContent].forEach(layer => {
+    if (!layer) return;
+    const el = layer.querySelector('#npc-secrets-panel');
+    if (el) el.innerHTML = html;
+  });
+}
+function addNpcSecret() {
+  const npc = npcSelected[npcExpandedIdx];
+  if (!npc) return;
+  if (!npc.secrets) npc.secrets = [];
+  npc.secrets.push('');
+  renderNpcSecretsPanel();
+  openSecretModal('npc', npc.secrets.length - 1);
+}
+
+function openSecretModal(type, idx) {
+  _secretModalType = type;
+  _secretModalIdx  = idx;
+  var secret = '';
+  if (type === 'city') {
+    var city = citySelected[cityExpandedIdx];
+    secret = (city && city.secrets) ? (city.secrets[idx] || '') : '';
+  } else {
+    var npc = npcSelected[npcExpandedIdx];
+    secret = (npc && npc.secrets) ? (npc.secrets[idx] || '') : '';
+  }
+  var overlay = document.getElementById('secret-modal-overlay');
+  var ta = document.getElementById('secret-modal-textarea');
+  if (!overlay || !ta) return;
+  ta.value = secret;
+  overlay.style.display = 'flex';
+  setTimeout(function(){ ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }, 50);
+}
+function _confirmSecretModal() {
+  var ta = document.getElementById('secret-modal-textarea');
+  if (!ta) return;
+  var val = ta.value;
+  if (_secretModalType === 'city') {
+    var city = citySelected[cityExpandedIdx];
+    if (city && city.secrets) city.secrets[_secretModalIdx] = val;
+    renderCityDetailPanel();
+  } else {
+    var npc = npcSelected[npcExpandedIdx];
+    if (npc && npc.secrets) npc.secrets[_secretModalIdx] = val;
+    renderNpcSecretsPanel();
+  }
+  _cancelSecretModal();
+}
+function _cancelSecretModal() {
+  var overlay = document.getElementById('secret-modal-overlay');
+  if (overlay) overlay.style.display = 'none';
+  _secretModalType = '';
+  _secretModalIdx  = -1;
+}
+function delCitySecret(i) {
+  var city = citySelected[cityExpandedIdx];
+  if (!city || !city.secrets) return;
+  city.secrets.splice(i, 1);
+  renderCityDetailPanel();
+}
+function delNpcSecret(i) {
+  var npc = npcSelected[npcExpandedIdx];
+  if (!npc || !npc.secrets) return;
+  npc.secrets.splice(i, 1);
+  renderNpcSecretsPanel();
+}
+
+function _applySelPositions(layer, items, expIdx, type) {
+  /* Smooth-update card positions in-place (preserving DOM so CSS transition fires) */
+  if (!layer) return;
+  const el = layer.querySelector('#' + type + '-selected-stack');
+  if (!el) return;
+  const wrap = el.firstElementChild;
+  if (!wrap) return;
+  const n    = items.length;
+  const tops = _selTops(n, expIdx);
+  wrap.style.height = (tops[n - 1] + SEL_FULL) + 'px';
+  wrap.querySelectorAll('[data-sel-idx]').forEach(card => {
+    const idx = parseInt(card.getAttribute('data-sel-idx'));
+    card.style.top = tops[idx] + 'px';
+    const det = card.querySelector('.sel-detail');
+    if (det) {
+      const isExp = idx === expIdx;
+      det.style.opacity       = isExp ? '1' : '0';
+      det.style.maxHeight     = isExp ? (SEL_FULL - 50) + 'px' : '0';
+      det.style.pointerEvents = isExp ? 'auto' : 'none';
+    }
+  });
+}
+
+function toggleCityCard(i) {
+  cityExpandedIdx = cityExpandedIdx === i ? -1 : i;
+  [flipFace, frontContent].forEach(l => _applySelPositions(l, citySelected, cityExpandedIdx, 'city'));
+  renderCityDetailPanel();
+}
+function toggleNpcCard(i) {
+  npcExpandedIdx = npcExpandedIdx === i ? -1 : i;
+  [flipFace, frontContent].forEach(l => _applySelPositions(l, npcSelected, npcExpandedIdx, 'npc'));
+  renderNpcSecretsPanel();
+}
+
+function removeCitySelected(i) {
+  const card = flipFace ? flipFace.querySelector('[id="city-selected-stack"] [data-sel-idx="' + i + '"]') : null;
+  if (card) {
+    _ghostSlideRemove(card, 'city-card-stack', () => {
+      citySelected.splice(i, 1);
+      cityExpandedIdx = Math.min(cityExpandedIdx, citySelected.length - 1);
+      renderCitySelStack();
+    });
+  } else {
+    citySelected.splice(i, 1);
+    cityExpandedIdx = Math.min(cityExpandedIdx, citySelected.length - 1);
+    renderCitySelStack();
+  }
+}
+function removeNpcSelected(i) {
+  const card = flipFace ? flipFace.querySelector('[id="npc-selected-stack"] [data-sel-idx="' + i + '"]') : null;
+  if (card) {
+    _ghostSlideRemove(card, 'npc-card-stack', () => {
+      npcSelected.splice(i, 1);
+      npcExpandedIdx = Math.min(npcExpandedIdx, npcSelected.length - 1);
+      renderNpcSelStack();
+    });
+  } else {
+    npcSelected.splice(i, 1);
+    npcExpandedIdx = Math.min(npcExpandedIdx, npcSelected.length - 1);
+    renderNpcSelStack();
+  }
+}
+
+function _ghostSlideRemove(card, deckStackId, onDone) {
+  /* Ghost clone travels from the selected card back to the deck stack. */
+  const r     = card.getBoundingClientRect();
+  const ghost = card.cloneNode(true);
+  Object.assign(ghost.style, {
+    position: 'fixed', top: r.top + 'px', left: r.left + 'px',
+    width: r.width + 'px', height: r.height + 'px',
+    margin: '0', zIndex: '1000', pointerEvents: 'none', transition: 'none',
+  });
+  document.body.appendChild(ghost);
+
+  /* Hide the real card immediately so only the ghost animates */
+  card.style.transition  = 'none';
+  card.style.opacity     = '0';
+  card.style.pointerEvents = 'none';
+
+  /* Destination: centre of the deck stack */
+  const stackEl  = flipFace ? flipFace.querySelector('[id="' + deckStackId + '"]') : null;
+  const stackR   = stackEl  ? stackEl.getBoundingClientRect() : null;
+  const destTop  = stackR   ? stackR.top  + stackR.height * 0.2 : r.top  - 300;
+  const destLeft = stackR   ? stackR.left + stackR.width  * 0.1 : r.left - 300;
+  const dx = destLeft - r.left;
+  const dy = destTop  - r.top;
+
+  void ghost.offsetWidth;
+  _pulseStack(deckStackId);
+  ghost.style.transition = 'transform 0.46s cubic-bezier(0.4,0,0.55,1), opacity 0.15s ease 0.33s';
+  ghost.style.transform  = 'translate(' + dx + 'px,' + dy + 'px) scale(0.76)';
+  ghost.style.opacity    = '0';
+  setTimeout(() => { ghost.remove(); if (onDone) onDone(); }, 520);
+}
+
+function _ghostSlideAdd(card, deckStackId, selStackId, currentCount, onDone) {
+  /* Ghost clone travels from the main card position down to the exact
+     slot at the bottom of the selected stack, then fades out on arrival. */
+  const r     = card.getBoundingClientRect();
+  const ghost = card.cloneNode(true);
+  Object.assign(ghost.style, {
+    position: 'fixed', top: r.top + 'px', left: r.left + 'px',
+    width: r.width + 'px', height: r.height + 'px',
+    margin: '0', zIndex: '1000', pointerEvents: 'none', transition: 'none',
+  });
+  document.body.appendChild(ghost);
+
+  /* Destination: top-left of where the new card will appear in the stack */
+  const stackEl  = flipFace ? flipFace.querySelector('[id="' + selStackId + '"]') : null;
+  const stackR   = stackEl  ? stackEl.getBoundingClientRect() : null;
+  const destTop  = stackR   ? stackR.top  + currentCount * SEL_PEEK : r.top  + 400;
+  const destLeft = stackR   ? stackR.left : r.left;
+  const dx = destLeft - r.left;
+  const dy = destTop  - r.top;
+
+  void ghost.offsetWidth;
+  _pulseStack(deckStackId);
+  ghost.style.transition = 'transform 0.52s cubic-bezier(0.4,0,0.55,1), opacity 0.15s ease 0.4s';
+  ghost.style.transform  = 'translate(' + dx + 'px,' + dy + 'px)';
+  ghost.style.opacity    = '0';
+  setTimeout(() => { ghost.remove(); if (onDone) onDone(); }, 580);
+}
+
+function addCityToSelected() {
+  if (citySwapping) return;
+  const card = flipFace ? flipFace.querySelector('[id="city-main-card"]') : null;
+  if (!card) return;
+  citySwapping = true;
+
+  const captured = {
+    name: card.querySelector('.city-cname')?.textContent || cityCardsData[cityCardIdx].name,
+    type: card.querySelector('.city-ctype')?.textContent || cityCardsData[cityCardIdx].type,
+    desc: card.querySelector('.city-cdesc')?.textContent || cityCardsData[cityCardIdx].desc,
+    condition: 'Stable', geo: '', climate: '', religion: '', vibe: '', languages: '', secrets: [],
+  };
+
+  _ghostSlideAdd(card, 'city-card-stack', 'city-selected-stack', citySelected.length, () => {
+    citySelected.push(captured);
+    cityExpandedIdx = citySelected.length - 1;
+    renderCitySelStack();
+    citySwapping = false;
+  });
+
+  /* Simultaneously slide new card in from left */
+  card.style.opacity = '0'; card.style.transition = 'none';
+  cityCardIdx = (cityCardIdx + 1) % cityCardsData.length;
+  const d   = cityCardsData[cityCardIdx];
+  const rem = cityCardsData.length - cityCardIdx - 1;
+  _updateCardFields(flipFace,    { 'city-cname': d.name, 'city-ctype': d.type, 'city-cdesc': d.desc });
+  _updateCardFields(frontContent,{ 'city-cname': d.name, 'city-ctype': d.type, 'city-cdesc': d.desc });
+  _updateCount(flipFace,    'city-stack-count', rem, cityCardsData.length);
+  _updateCount(frontContent,'city-stack-count', rem, cityCardsData.length);
+  card.style.transform = 'translateX(-224px) scale(0.82) rotate(-6deg)';
+  void card.offsetWidth;
+  card.style.transition = 'transform 0.34s cubic-bezier(0,0,0.2,1), opacity 0.28s ease-out';
+  card.style.transform  = 'translateX(0) scale(1) rotate(0deg)';
+  card.style.opacity    = '1';
+}
+
+function addNpcToSelected() {
+  if (npcSwapping) return;
+  const card = flipFace ? flipFace.querySelector('[id="npc-main-card"]') : null;
+  if (!card) return;
+  npcSwapping = true;
+
+  const captured = {
+    name: card.querySelector('.npc-cname')?.textContent || npcCardsData[npcCardIdx].name,
+    role: card.querySelector('.npc-crole')?.textContent || npcCardsData[npcCardIdx].role,
+    desc: card.querySelector('.npc-cdesc')?.textContent || npcCardsData[npcCardIdx].desc,
+    secrets: [],
+  };
+
+  _ghostSlideAdd(card, 'npc-card-stack', 'npc-selected-stack', npcSelected.length, () => {
+    npcSelected.push(captured);
+    npcExpandedIdx = npcSelected.length - 1;
+    renderNpcSelStack();
+    npcSwapping = false;
+  });
+
+  card.style.opacity = '0'; card.style.transition = 'none';
+  npcCardIdx = (npcCardIdx + 1) % npcCardsData.length;
+  const d   = npcCardsData[npcCardIdx];
+  const rem = npcCardsData.length - npcCardIdx - 1;
+  _updateCardFields(flipFace,    { 'npc-cname': d.name, 'npc-crole': d.role, 'npc-cdesc': d.desc });
+  _updateCardFields(frontContent,{ 'npc-cname': d.name, 'npc-crole': d.role, 'npc-cdesc': d.desc });
+  _updateCount(flipFace,   'npc-stack-count', rem, npcCardsData.length);
+  _updateCount(frontContent,'npc-stack-count', rem, npcCardsData.length);
+  card.style.transform = 'translateX(-224px) scale(0.82) rotate(-6deg)';
+  void card.offsetWidth;
+  card.style.transition = 'transform 0.34s cubic-bezier(0,0,0.2,1), opacity 0.28s ease-out';
+  card.style.transform  = 'translateX(0) scale(1) rotate(0deg)';
+  card.style.opacity    = '1';
+}
+
+
+/* ══════════════════════════════════════════
+   KEYBOARD
+══════════════════════════════════════════ */
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') turn(1);
+  if (e.key === 'ArrowLeft')  turn(-1);
+});
+
+
+/* ══════════════════════════════════════════
+   TOUCH / SWIPE
+══════════════════════════════════════════ */
+let touchStartX = 0, touchStartY = 0;
+document.addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+    turn(dx < 0 ? 1 : -1);
+  }
+}, { passive: true });
+</script>
+
+<!-- ── SECRET EDIT MODAL ── -->
+<div id="secret-modal-overlay" onclick="_cancelSecretModal()" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(6,3,1,0.75);align-items:center;justify-content:center;">
+  <div onclick="event.stopPropagation()" style="width:min(86vw,360px);background:linear-gradient(160deg,#f5e9d0 0%,#ede0c0 100%);border:1.5px solid rgba(140,95,30,0.60);border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.62),0 2px 8px rgba(0,0,0,0.28);padding:16px 18px;">
+    <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(78,50,10,0.72);margin-bottom:10px;padding-bottom:7px;border-bottom:0.5px solid rgba(110,75,22,0.22);">🔒 Edit Secret</div>
+    <textarea id="secret-modal-textarea" style="width:100%;min-height:130px;resize:vertical;font-family:'Crimson Text',serif;font-size:11.5px;line-height:1.55;color:rgba(52,32,6,0.88);background:rgba(255,248,230,0.88);border:1px solid rgba(140,95,30,0.40);border-radius:4px;padding:9px 11px;outline:none;box-sizing:border-box;user-select:text;-webkit-user-select:text;"></textarea>
+    <div style="display:flex;gap:8px;margin-top:11px;justify-content:flex-end;">
+      <div onclick="_cancelSecretModal()" style="font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.09em;text-transform:uppercase;padding:6px 16px;border:1px solid rgba(110,75,22,0.38);border-radius:3px;background:rgba(200,165,106,0.18);color:rgba(52,32,6,0.65);cursor:pointer;">Cancel</div>
+      <div onclick="_confirmSecretModal()" style="font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.09em;text-transform:uppercase;padding:6px 16px;border:1px solid rgba(80,140,45,0.80);border-radius:3px;background:rgba(24,88,12,0.88);color:rgba(220,255,210,0.95);cursor:pointer;">Update</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
